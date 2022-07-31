@@ -4,5 +4,9 @@
   "module": "src/index.js",
   "devDependencies": {
     "bun-types": "latest"
+  },
+  "dependencies": {
+    "phaser": "^3.55.2",
+    "typescript": "^4.7.4"
   }
 }

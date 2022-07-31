@@ -1,95 +1,88 @@
-class Example extends Phaser.Scene
-{
-    constructor ()
-    {
-        super();
-    }
+import * as Phaser from "phaser";
 
-    preload () 
-    {
-        this.load.image('ship', 'assets/sprites/fmship.png');
-        this.load.tilemapTiledJSON('map', 'assets/tilemaps/maps/super-mario.json');
-        this.load.image('tiles1', 'assets/tilemaps/tiles/super-mario.png');
-    }
-
-    create () 
-    {
-        console.log("Starting game")
-        this.cameras.main.setBounds(0, 0, 3392, 100);
-        this.physics.world.setBounds(0, 0, 3392, 240);
-    
-        var map = this.make.tilemap({ key: 'map' });
-        var tileset = map.addTilesetImage('SuperMarioBros-World1-1', 'tiles1');
-        var layer = map.createLayer('World1', tileset, 0, 0);
-    
-        this.cursors = this.input.keyboard.createCursorKeys();
-    
-        this.ship = this.physics.add.image(400, 100, 'ship').setAngle(90).setCollideWorldBounds(true);
-        // this.ship = this.add.image(400, 100, 'ship').setAngle(90);
-    
-        this.cameras.main.startFollow(this.ship, true, 0.08, 0.08);
-    
-        this.cameras.main.setZoom(4);
-    }
-
-    update () 
-    {
-        this.ship.setVelocity(0);
-
-        if (this.cursors.left.isDown)
-        {
-            this.ship.setAngle(-90).setVelocityX(-200);
-        }
-        else if (this.cursors.right.isDown)
-        {
-            this.ship.setAngle(90).setVelocityX(200);
-        }
-    
-        if (this.cursors.up.isDown)
-        {
-            this.ship.setVelocityY(-200);
-        }
-        else if (this.cursors.down.isDown)
-        {
-            this.ship.setVelocityY(200);
-        }
-    }
-
-    updateDirect ()
-    {
-        if (this.cursors.left.isDown && this.ship.x > 0)
-        {
-            this.ship.setAngle(-90);
-            this.ship.x -= 2.5;
-        }
-        else if (this.cursors.right.isDown && this.ship.x < 3392)
-        {
-            this.ship.setAngle(90);
-            this.ship.x += 2.5;
-        }
-
-        if (this.cursors.up.isDown && this.ship.y > 0)
-        {
-            this.ship.y -= 2.5;
-        }
-        else if (this.cursors.down.isDown && this.ship.y < 240)
-        {
-            this.ship.y += 2.5;
-        }
-    }
-
-}
-
-const config = {
-    type: Phaser.AUTO,
-    parent: 'phaser-example',
-    width: 800,
-    height: 600,
-    pixelArt: true,
-    physics: {
-        default: 'arcade',
-    },
-    scene: [ Example ]
+var config = {
+  type: Phaser.AUTO,
+  width: 800,
+  height: 600,
+  parent: "phaser-example",
+  pixelArt: true,
+  backgroundColor: "#000000",
+  scene: {
+    preload: preload,
+    create: create,
+    update: update,
+  },
 };
 
-const game = new Phaser.Game(config);
+var player: { x: number; y: number; angle: number };
+var layer: {
+  getTileAtWorldXY: (arg0: number, arg1: number, arg2: boolean) => any;
+};
+var cursors: { left: any; right: any; up: any; down: any };
+
+new Phaser.Game(config);
+
+class MyGame extends Phaser.Scene {
+  
+}
+
+function preload() {
+  this.load.image("tiles", [
+    "../public/phaser3examples/drawtiles1.png",
+    "../public/phaser3examples/drawtiles1_n.png",
+  ]);
+  this.load.image("car", "../public/phaser3examples/car90.png");
+  this.load.tilemapCSV("map", "../public/phaser3examples/grid.csv");
+}
+
+function create() {
+  var map = this.make.tilemap({ key: "map", tileWidth: 32, tileHeight: 32 });
+
+  var tileset = map.addTilesetImage("tiles", null, 32, 32, 1, 2);
+
+  layer = map.createLayer(0, tileset, 0, 0);
+  player = this.add.image(32 + 16, 32 + 16, "car");
+
+  cursors = this.input.keyboard.createCursorKeys();
+}
+
+function update() {
+  
+  if (this.input.keyboard.checkDown(cursors.left, 100)) {
+    var tile = layer.getTileAtWorldXY(player.x - 32, player.y, true);
+
+    if (tile.index === 2) {
+      //  Blocked, we can't move
+    } else {
+      player.x -= 32;
+      player.angle = 180;
+    }
+  } else if (this.input.keyboard.checkDown(cursors.right, 100)) {
+    var tile = layer.getTileAtWorldXY(player.x + 32, player.y, true);
+
+    if (tile.index === 2) {
+      //  Blocked, we can't move
+    } else {
+      player.x += 32;
+      player.angle = 0;
+    }
+  } else if (this.input.keyboard.checkDown(cursors.up, 100)) {
+    var tile = layer.getTileAtWorldXY(player.x, player.y - 32, true);
+
+    if (tile.index === 2) {
+      //  Blocked, we can't move
+    } else {
+      player.y -= 32;
+      player.angle = -90;
+    }
+  } else if (this.input.keyboard.checkDown(cursors.down, 100)) {
+    var tile = layer.getTileAtWorldXY(player.x, player.y + 32, true);
+
+    if (tile.index === 2) {
+      //  Blocked, we can't move
+    } else {
+      player.y += 32;
+      player.angle = 90;
+    }
+  }
+}
