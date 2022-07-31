@@ -5,7 +5,7 @@ export class Graph {
   }
   addVertex(vertex: string): void {
     if (!this.adjacencyList[vertex]) {
-      this.adjacencyList[vertex] = [];
+      this.adjacencyList[vertex] = new Set();
     }
   }
   addEdge(source: string, destination: string): void {
@@ -15,8 +15,7 @@ export class Graph {
     if (!this.adjacencyList[destination]) {
       this.addVertex(destination);
     }
-    this.adjacencyList[source].push(destination);
-    this.adjacencyList[destination].push(source);
+    this.adjacencyList[source].add(destination);
   }
   getNeighbors(vertex: string): string[] {
     return this.adjacencyList[vertex];

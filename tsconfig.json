@@ -6,6 +6,8 @@
     // "bun-types" is the important part
     "types": ["bun-types"],
     "moduleResolution": "NodeNext",
-    "resolveJsonModule": true,"esModuleInterop": true
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "typeRoots": ["src/customTypings", "node_modules/@types"]
   }
 }
