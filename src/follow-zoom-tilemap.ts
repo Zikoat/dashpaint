@@ -4,6 +4,7 @@ import marioTilemap from "../public/assets/tilemaps/maps/super-mario.json";
 class Example extends Phaser.Scene {
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   ship: Phaser.Types.Physics.Arcade.ImageWithDynamicBody;
+  
   constructor() {
     super({});
   }
