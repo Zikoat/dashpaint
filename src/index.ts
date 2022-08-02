@@ -34,7 +34,13 @@ class MyScene extends Phaser.Scene {
 
     this.layer = map.createLayer(0, tileset, 0, 0);
     this.player = this.add.image(32 * 2 + 16, 32 + 16, "car");
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1)
 
+    this.colorMap();
+
+    this.cursors = this.input.keyboard.createCursorKeys();
+  }
+  colorMap() {
     this.graph = this.createGraph({
       x: this.player.x - 16,
       y: this.player.y - 16,
@@ -77,11 +83,9 @@ class MyScene extends Phaser.Scene {
         );
         tile.index = 1;
         console.log(" setting color to ", color);
-         tile.tint = Number(color.replace("#","0x"));
+        tile.tint = Number(color.replace("#", "0x"));
       }
     }
-
-    this.cursors = this.input.keyboard.createCursorKeys();
   }
 
   toNumberAdjacencyList({
@@ -143,7 +147,7 @@ class MyScene extends Phaser.Scene {
 
       while (tile.index !== 2) {
         this.counter++;
-        if (this.counter > 20) throw Error("shit");
+        // if (this.counter > 20) throw Error("shit");
         currentPosition.x += direction.x;
         currentPosition.y += direction.y;
 
