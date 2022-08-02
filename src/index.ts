@@ -34,7 +34,8 @@ class MyScene extends Phaser.Scene {
 
     this.layer = map.createLayer(0, tileset, 0, 0);
     this.player = this.add.image(32 * 2 + 16, 32 + 16, "car");
-    this.cameras.main.startFollow(this.player, true, 0.1, 0.1)
+
+    this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
 
     this.colorMap();
 
