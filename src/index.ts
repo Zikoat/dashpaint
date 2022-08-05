@@ -26,7 +26,6 @@ class MyScene extends Phaser.Scene {
   }
 
   create() {
-    
     const mapSize = 30;
     this.tileSize = 8;
     var map = this.make.tilemap({
@@ -37,7 +36,14 @@ class MyScene extends Phaser.Scene {
       tileHeight: this.tileSize,
     });
 
-    var tileset = map.addTilesetImage("tiles", null, this.tileSize, this.tileSize, 0, 0);
+    var tileset = map.addTilesetImage(
+      "tiles",
+      null,
+      this.tileSize,
+      this.tileSize,
+      0,
+      0
+    );
 
     // this.layer = map.createLayer(0, tileset, 0, 0);
     this.layer = map.createBlankLayer("ShitLayer1", tileset);
@@ -301,8 +307,8 @@ class MyScene extends Phaser.Scene {
 
 var config = {
   type: Phaser.AUTO,
-  width: 1800,
-  height: 800,
+  width: window.innerWidth,
+  height: window.innerHeight,
   parent: "phaser-example",
   pixelArt: true,
   backgroundColor: "#000000",
