@@ -9,8 +9,4 @@ var adjacencyList = [
   [2], // 3
 ];
 
-export class SCC {
-  constructor() {
-    console.log(scc(adjacencyList));
-  }
-}
+console.log(scc(adjacencyList));

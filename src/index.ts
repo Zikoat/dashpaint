@@ -1,6 +1,5 @@
 import * as Phaser from "phaser";
 import { Graph } from "./Graph";
-import { SCC } from "./SCC";
 import * as scc from "strongly-connected-components";
 import chroma from "chroma-js";
 
@@ -299,6 +298,7 @@ class MyScene extends Phaser.Scene {
   }
 
   getAngle(x: number, y: number): number {
+    // stackoverflow.com/a/35271543
     var angle = Math.atan2(y, x);
     var degrees = (180 * angle) / Math.PI;
     return (360 + Math.round(degrees)) % 360;
@@ -316,6 +316,3 @@ var config = {
 };
 
 const game = new Phaser.Game(config);
-// stackoverflow.com/a/35271543
-
-const stronglyConnectedComponentsTest = new SCC();
