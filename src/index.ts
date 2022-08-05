@@ -17,34 +17,62 @@ class MyScene extends Phaser.Scene {
   graph: Graph;
 
   counter = 0;
+  tileSize: number;
 
   preload() {
-    this.load.image("tiles", [
-      "../public/phaser3examples/drawtiles1.png",
-      "../public/phaser3examples/drawtiles1_n.png",
-    ]);
-    this.load.image("car", "../public/phaser3examples/car90.png");
-    this.load.tilemapCSV("map", "../public/phaser3examples/grid.csv");
+    this.load.image("tiles", "../public/images/DashpaintTilesetV2.png");
+    this.load.image("character", "../public/images/DashpaintCharacter.png");
+    // this.load.tilemapCSV("map", "../public/phaser3examples/grid.csv");
   }
 
   create() {
-    var map = this.make.tilemap({ key: "map", tileWidth: 32, tileHeight: 32 });
+    
+    const mapSize = 30;
+    this.tileSize = 8;
+    var map = this.make.tilemap({
+      // key: "map",
+      width: mapSize,
+      height: mapSize,
+      tileWidth: this.tileSize,
+      tileHeight: this.tileSize,
+    });
 
-    var tileset = map.addTilesetImage("tiles", null, 32, 32, 1, 2);
+    var tileset = map.addTilesetImage("tiles", null, this.tileSize, this.tileSize, 0, 0);
 
-    this.layer = map.createLayer(0, tileset, 0, 0);
-    this.player = this.add.image(32 * 2 + 16, 32 + 16, "car");
+    // this.layer = map.createLayer(0, tileset, 0, 0);
+    this.layer = map.createBlankLayer("ShitLayer1", tileset);
 
-    this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
+    this.layer.fill(2, 0, 0, mapSize, mapSize);
+    this.layer.fill(1, 1, 1, mapSize - 2, mapSize - 2);
+    this.layer.weightedRandomize(
+      [
+        { index: 0, weight: 4 }, // walkable
+        { index: 2, weight: 1 }, // not walkable
+      ],
+      1,
+      1,
+      mapSize - 2,
+      mapSize - 2
+    );
+
+    this.player = this.add.image(
+      this.tileSize * 2 + this.tileSize / 2,
+      this.tileSize + this.tileSize / 2,
+      "character"
+    );
 
     this.colorMap();
 
+    this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
+    this.cameras.main.zoomTo(5, 1000, "Quad");
+
     this.cursors = this.input.keyboard.createCursorKeys();
   }
+
   colorMap() {
     this.graph = this.createGraph({
-      x: this.player.x - 16,
-      y: this.player.y - 16,
+      x: this.player.x - this.tileSize / 2,
+      y: this.player.y - this.tileSize / 2,
     });
 
     console.log(
@@ -82,7 +110,7 @@ class MyScene extends Phaser.Scene {
           tileInComponent.x,
           tileInComponent.y
         );
-        tile.index = 1;
+        tile.index = 18;
         console.log(" setting color to ", color);
         tile.tint = Number(color.replace("#", "0x"));
       }
@@ -119,10 +147,10 @@ class MyScene extends Phaser.Scene {
     const neighbors: Point[] = [];
 
     const directions = [
-      { x: -32, y: 0 },
-      { x: 32, y: 0 },
-      { x: 0, y: -32 },
-      { x: 0, y: 32 },
+      { x: -this.tileSize, y: 0 },
+      { x: this.tileSize, y: 0 },
+      { x: 0, y: -this.tileSize },
+      { x: 0, y: this.tileSize },
     ];
 
     for (const direction of directions) {
@@ -157,6 +185,10 @@ class MyScene extends Phaser.Scene {
           currentPosition.y + direction.y,
           true
         );
+        if (tile.index === 0) {
+          tile.index = 17;
+          // tile.tint = 0xffff00
+        }
       }
 
       if (currentPosition.x !== p.x || currentPosition.y !== p.y) {
@@ -203,7 +235,7 @@ class MyScene extends Phaser.Scene {
   }
   simplifyAdjacencyList(adjacencyList: { [x: string]: any }): any {
     function toSimpleString(p: Point): string {
-      return "" + p.x / 32 + "," + p.y / 32;
+      return "" + p.x / this.tileSize + "," + p.y / this.tileSize;
     }
     const output = {};
     for (const sourcePoint in adjacencyList) {
@@ -223,16 +255,16 @@ class MyScene extends Phaser.Scene {
   update() {
     if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
       if (this.input.keyboard.checkDown(this.cursors.left, 100)) {
-        this.movementDirection.x = -32;
+        this.movementDirection.x = -this.tileSize;
         this.updateAngle();
       } else if (this.input.keyboard.checkDown(this.cursors.right, 100)) {
-        this.movementDirection.x = 32;
+        this.movementDirection.x = this.tileSize;
         this.updateAngle();
       } else if (this.input.keyboard.checkDown(this.cursors.up, 100)) {
-        this.movementDirection.y = -32;
+        this.movementDirection.y = -this.tileSize;
         this.updateAngle();
       } else if (this.input.keyboard.checkDown(this.cursors.down, 100)) {
-        this.movementDirection.y = 32;
+        this.movementDirection.y = this.tileSize;
         this.updateAngle();
       }
     }
@@ -248,8 +280,8 @@ class MyScene extends Phaser.Scene {
     } else {
       this.player.x += this.movementDirection.x;
       this.player.y += this.movementDirection.y;
-      tile.index = 1;
-      // tile.tint = 0xff0000;
+      tile.index = 0;
+      tile.tint = 0xffff00;
     }
   }
 
@@ -269,8 +301,8 @@ class MyScene extends Phaser.Scene {
 
 var config = {
   type: Phaser.AUTO,
-  width: 800,
-  height: 600,
+  width: 1800,
+  height: 800,
   parent: "phaser-example",
   pixelArt: true,
   backgroundColor: "#000000",
