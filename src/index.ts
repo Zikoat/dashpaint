@@ -2,6 +2,7 @@ import * as Phaser from "phaser";
 import { Graph } from "./Graph";
 import * as scc from "strongly-connected-components";
 import chroma from "chroma-js";
+import * as dat from "dat.gui";
 
 type Point = { x: number; y: number };
 type Agent = { pos: Point; vel: Point };
@@ -17,6 +18,10 @@ class MyScene extends Phaser.Scene {
 
   counter = 0;
   tileSize: number;
+  gui: dat.GUI;
+  map: Phaser.Tilemaps.Tilemap;
+  tileset: Phaser.Tilemaps.Tileset;
+  connectedComponentsLayer: Phaser.Tilemaps.TilemapLayer;
 
   preload() {
     this.load.image("tiles", "../public/images/DashpaintTilesetV2.png");
@@ -27,7 +32,7 @@ class MyScene extends Phaser.Scene {
   create() {
     const mapSize = 30;
     this.tileSize = 8;
-    var map = this.make.tilemap({
+    this.map = this.make.tilemap({
       // key: "map",
       width: mapSize,
       height: mapSize,
@@ -35,7 +40,11 @@ class MyScene extends Phaser.Scene {
       tileHeight: this.tileSize,
     });
 
-    var tileset = map.addTilesetImage(
+    const playerSprite = this.textures.get("tiles");
+    const playerFrame = playerSprite.add("player", 0, 0, 24, 8, 8);
+    // console.log(playerSprite)
+
+    this.tileset = this.map.addTilesetImage(
       "tiles",
       null,
       this.tileSize,
@@ -45,7 +54,7 @@ class MyScene extends Phaser.Scene {
     );
 
     // this.layer = map.createLayer(0, tileset, 0, 0);
-    this.layer = map.createBlankLayer("ShitLayer1", tileset);
+    this.layer = this.map.createBlankLayer("ShitLayer1", this.tileset);
 
     this.layer.fill(2, 0, 0, mapSize, mapSize);
     this.layer.fill(1, 1, 1, mapSize - 2, mapSize - 2);
@@ -63,7 +72,7 @@ class MyScene extends Phaser.Scene {
     this.player = this.add.image(
       this.tileSize * 2 + this.tileSize / 2,
       this.tileSize + this.tileSize / 2,
-      "character"
+      playerSprite
     );
 
     this.colorMap();
@@ -72,6 +81,23 @@ class MyScene extends Phaser.Scene {
     this.cameras.main.zoomTo(5, 1000, "Quad");
 
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.gui = new dat.GUI();
+
+    const myValueToEdit = {
+      playerTint: "#FFFFFF",
+    };
+
+    const playerColor = this.gui.addColor(myValueToEdit, "playerTint");
+    playerColor.onChange((color) => {
+      console.log("changing player color to ", color);
+      this.player.tint = chroma(color).num();
+    });
+    playerColor.setValue("#00ffff");
+
+    this.gui.add(this.connectedComponentsLayer, "alpha", 0, 1);
+
+    // const showConComps = this.gui.add(conCompLayer, "alpha",0,1,0.01)
+    // showConComps.onChange((alphaValue)=>conCompLayer.alpha = alphaValue)
   }
 
   colorMap() {
@@ -105,15 +131,23 @@ class MyScene extends Phaser.Scene {
       .scale(["yellow", "008ae5"])
       .colors(tileConnectedComponents.length);
 
+    this.connectedComponentsLayer = this.map.createBlankLayer(
+      "connectedComponents",
+      this.tileset
+    );
+    this.connectedComponentsLayer.alpha = 0.5;
+    this.map.currentLayerIndex = this.map.getLayerIndexByName("ShitLayer1");
+
     for (const [
       index,
       tileConnectedComponent,
     ] of tileConnectedComponents.entries()) {
       const color = colors[index];
       for (const tileInComponent of tileConnectedComponent) {
-        const tile = this.layer.getTileAtWorldXY(
+        const tile = this.connectedComponentsLayer.getTileAtWorldXY(
           tileInComponent.x,
-          tileInComponent.y
+          tileInComponent.y,
+          true
         );
         tile.index = 18;
         console.log(" setting color to ", color);
@@ -291,10 +325,8 @@ class MyScene extends Phaser.Scene {
   }
 
   updateAngle() {
-    this.player.angle = this.getAngle(
-      this.movementDirection.x,
-      this.movementDirection.y
-    );
+    this.player.angle =
+      this.getAngle(this.movementDirection.x, this.movementDirection.y) - 90;
   }
 
   getAngle(x: number, y: number): number {
