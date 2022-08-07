@@ -1,12 +1,13 @@
+console.log(" helle");
 import * as Phaser from "phaser";
 import { Graph } from "./Graph";
 import * as scc from "strongly-connected-components";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
+import { testEigenvector } from "./eigenvector.test";
+import math from "mathjs";
 
 type Point = { x: number; y: number };
-type Agent = { pos: Point; vel: Point };
-type Node = { pos: Point; neighbors: Point[] };
 
 class MyScene extends Phaser.Scene {
   movementDirection = { x: 0, y: 0 };
@@ -30,7 +31,12 @@ class MyScene extends Phaser.Scene {
   }
 
   create() {
-    const mapSize = 30;
+    console.log("---start eigenvector test");
+
+    testEigenvector();
+    console.log("---stop eigenvector test");
+
+    const mapSize = 50;
     this.tileSize = 8;
     this.map = this.make.tilemap({
       // key: "map",
@@ -68,17 +74,18 @@ class MyScene extends Phaser.Scene {
       mapSize - 2,
       mapSize - 2
     );
+    this.layer.fill(0, 1, 1, 2, 1);
 
     this.player = this.add.image(
-      this.tileSize * 2 + this.tileSize / 2,
+      this.tileSize + this.tileSize / 2,
       this.tileSize + this.tileSize / 2,
       playerSprite
     );
 
-    this.colorMap();
+    this.colorMapConnectedComponents();
 
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
-    this.cameras.main.zoomTo(5, 1000, "Quad");
+    this.cameras.main.zoomTo(4, 1000, "Quad");
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.gui = new dat.GUI();
@@ -99,8 +106,48 @@ class MyScene extends Phaser.Scene {
     // const showConComps = this.gui.add(conCompLayer, "alpha",0,1,0.01)
     // showConComps.onChange((alphaValue)=>conCompLayer.alpha = alphaValue)
   }
+  colorMapSteadyState() {
+    this.graph = this.createGraph({
+      x: this.player.x - this.tileSize / 2,
+      y: this.player.y - this.tileSize / 2,
+    });
 
-  colorMap() {
+    this.graph.adjacencyList;
+
+    const processedAdjacencyList = this.toNumberAdjacencyList({
+      adjacencyList: this.graph.adjacencyList,
+    });
+
+    const steadyState2 = adjacencyListToSteadyState(
+      processedAdjacencyList.numberAdjacencyList
+    );
+    const steadyState = math.multiply(
+      math.divide(steadyState2, math.max(steadyState2)),
+      5
+    ) as number[];
+    console.log(steadyState);
+    const sccInput: number[][] = processedAdjacencyList.numberAdjacencyList;
+    // const tileConnectedComponents = sccOutput.components.map((component) =>
+    //   component.map((sourceNumber) =>
+    //   )
+    // );
+    // console.log(tileConnectedComponents);
+
+    const colors = chroma.scale(["red", "green"]);
+
+    for (const [index, nodeDifficulty] of steadyState.entries()) {
+      const color = colors(nodeDifficulty);
+      const tilePosition = this.stringToPoint(
+        processedAdjacencyList.values[index]
+      );
+
+      const tile = this.layer.getTileAtWorldXY(tilePosition.x, tilePosition.y);
+      tile.index = 18;
+      tile.tint = color.num();
+    }
+  }
+
+  colorMapConnectedComponents() {
     this.graph = this.createGraph({
       x: this.player.x - this.tileSize / 2,
       y: this.player.y - this.tileSize / 2,
@@ -115,7 +162,6 @@ class MyScene extends Phaser.Scene {
     const processedAdjacencyList = this.toNumberAdjacencyList({
       adjacencyList: this.graph.adjacencyList,
     });
-    // console.log(this.toNumberAdjacencyList(this.graph.adjacencyList));
 
     const sccInput: number[][] = processedAdjacencyList.numberAdjacencyList;
     const sccOutput: { adjacencyList: number[][]; components: number[][] } =
@@ -136,6 +182,8 @@ class MyScene extends Phaser.Scene {
       this.tileset
     );
     this.connectedComponentsLayer.alpha = 0.5;
+    this.connectedComponentsLayer.depth = -1;
+
     this.map.currentLayerIndex = this.map.getLayerIndexByName("ShitLayer1");
 
     for (const [
@@ -149,8 +197,8 @@ class MyScene extends Phaser.Scene {
           tileInComponent.y,
           true
         );
-        tile.index = 18;
-        console.log(" setting color to ", color);
+        // Set tiles that are nodes in the connected component to a big dot
+        tile.index = 2;
         tile.tint = Number(color.replace("#", "0x"));
       }
     }
@@ -182,7 +230,6 @@ class MyScene extends Phaser.Scene {
   }
 
   getNeighbors(p: Point): Point[] {
-    // console.log("getting neighbors of ", p);
     const neighbors: Point[] = [];
 
     const directions = [
@@ -225,6 +272,7 @@ class MyScene extends Phaser.Scene {
           true
         );
         if (tile.index === 0) {
+          // When building the graph, set the tile to a small dot when dashing
           tile.index = 17;
           // tile.tint = 0xffff00
         }
@@ -234,13 +282,10 @@ class MyScene extends Phaser.Scene {
         neighbors.push(currentPosition);
       }
     }
-    console.log("neighbors of ", p, "is", neighbors);
     return neighbors;
   }
 
   createGraph(start: Point): Graph {
-    const myGraph: Graph = new Graph();
-    console.log("creating graph");
     const result = new Graph();
     const stack = [this.pointToString(start)];
     const visited = {};
@@ -261,16 +306,6 @@ class MyScene extends Phaser.Scene {
       }
     }
     return result;
-
-    // const verticesToExplore: Point[] = [];
-    // verticesToExplore.push(start);
-
-    // myGraph.push({
-    //   pos: { x: start.x, y: start.y },
-    //   neighbors: neighbors.sort(),
-    // });
-
-    // return myGraph;
   }
   simplifyAdjacencyList(adjacencyList: { [x: string]: any }): any {
     function toSimpleString(p: Point): string {
@@ -319,8 +354,9 @@ class MyScene extends Phaser.Scene {
     } else {
       this.player.x += this.movementDirection.x;
       this.player.y += this.movementDirection.y;
+      // when walking over a tile, set the index to 0 to remove dots
       tile.index = 0;
-      tile.tint = 0xffff00;
+      // tile.tint = 0xffff00;
     }
   }
 
@@ -335,6 +371,26 @@ class MyScene extends Phaser.Scene {
     var degrees = (180 * angle) / Math.PI;
     return (360 + Math.round(degrees)) % 360;
   }
+}
+
+function adjacencyListToTransitionMatrix(adjacencyList: number[][]) {
+  //   const amountOfNodes = adjacencyList.length;
+
+  const matrix = math.matrix("dense"); //amountOfNodes, amountOfNodes);
+
+  for (const [fromNode, edges] of adjacencyList.entries()) {
+    for (const toNode of edges) {
+      matrix.set([fromNode, toNode], 1 / edges.length);
+    }
+  }
+  return matrix;
+}
+
+export function adjacencyListToSteadyState(adjacencyList: number[][]) {
+  const transitionMatrix = adjacencyListToTransitionMatrix(adjacencyList);
+
+  const shit = math.pow(transitionMatrix, 2000) as math.Matrix;
+  return shit.toArray()[0] as number[];
 }
 
 var config = {
