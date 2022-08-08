@@ -11,18 +11,13 @@ var adjacencyList = [
   [0, 3], //4
 ];
 
-
 export function testEigenvector() {
-  var liste = [1,2,3,4,5,6,7]
-  console.log(liste.length+1)
-  console.log("hello world")
 
-  //   const transitionMatrix = math.matrix([
-  //     [0.6, 0.4],
-  //     [0.15, 0.85],
-  //   ])
+  const transitionMatrix = [
+    [0.6, 0.4],
+    [0.15, 0.85],
+  ];
 
-  console.log("steady state", adjacencyListToSteadyState(adjacencyList));
-  const matrix = math.matrix()
-
+  console.log("steady state", adjacencyListToSteadyState(transitionMatrix));
+  const matrix = math.matrix();
 }

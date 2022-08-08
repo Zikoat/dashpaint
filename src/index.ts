@@ -5,7 +5,14 @@ import * as scc from "strongly-connected-components";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
 import { testEigenvector } from "./eigenvector.test";
-import math, { abs, isComplex, MathArray, MathNumericType } from "mathjs";
+import math, {
+  abs,
+  isComplex,
+  MathArray,
+  MathNumericType,
+  Matrix,
+  max,
+} from "mathjs";
 
 type Point = { x: number; y: number };
 
@@ -23,6 +30,10 @@ class MyScene extends Phaser.Scene {
   map: Phaser.Tilemaps.Tilemap;
   tileset: Phaser.Tilemaps.Tileset;
   connectedComponentsLayer: Phaser.Tilemaps.TilemapLayer;
+  pathLengthColorLayer: Phaser.Tilemaps.TilemapLayer;
+  walkableTiles: Point[] = [];
+  maxPathLength = 0;
+  minPathLength = Infinity;
 
   preload() {
     this.load.image("tiles", "../public/images/DashpaintTilesetV2.png");
@@ -33,10 +44,10 @@ class MyScene extends Phaser.Scene {
   create() {
     console.log("---start eigenvector test");
 
-    testEigenvector();
+    // testEigenvector();
     console.log("---stop eigenvector test");
 
-    const mapSize = 7;
+    const mapSize = 30;
     this.tileSize = 8;
     this.map = this.make.tilemap({
       // key: "map",
@@ -82,14 +93,21 @@ class MyScene extends Phaser.Scene {
       playerSprite
     );
 
+    this.gui = new dat.GUI();
+
+    this.pathLengthColorLayer = this.map.createBlankLayer(
+      "pathLengthColorLayer",
+      this.tileset
+    );
+
     this.colorMapConnectedComponents();
     // this.colorMapSteadyState();
+    this.colorMapPathLengthMinMax();
 
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
     this.cameras.main.zoomTo(4, 1000, "Quad");
 
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.gui = new dat.GUI();
 
     const myValueToEdit = {
       playerTint: "#FFFFFF",
@@ -106,6 +124,27 @@ class MyScene extends Phaser.Scene {
 
     // const showConComps = this.gui.add(conCompLayer, "alpha",0,1,0.01)
     // showConComps.onChange((alphaValue)=>conCompLayer.alpha = alphaValue)
+  }
+  colorMapPathLengthMinMax() {
+    const colorScale = chroma.scale(["green", "yellow", "red"]);
+    colorScale.domain([this.minPathLength, this.maxPathLength]);
+
+    for (const point of this.walkableTiles) {
+      const tile = this.pathLengthColorLayer.getTileAtWorldXY(
+        point.x,
+        point.y,
+        true
+      );
+      tile.index = 2;
+      const maxPathLength = tile.properties.maxPathLength;
+      if (typeof maxPathLength !== "number")
+        throw new Error("maxPathLength is undefined on a walkable tile");
+
+      tile.tint = colorScale(maxPathLength).num();
+    }
+    this.pathLengthColorLayer.alpha = 0.5;
+    this.pathLengthColorLayer.depth = -2;
+    this.gui.add(this.pathLengthColorLayer, "alpha", 0, 1);
   }
 
   update() {
@@ -220,7 +259,7 @@ class MyScene extends Phaser.Scene {
     this.connectedComponentsLayer.alpha = 0.5;
     this.connectedComponentsLayer.depth = -1;
 
-    this.map.currentLayerIndex = this.map.getLayerIndexByName("ShitLayer1");
+    this.setDefaultLayer();
 
     for (const [
       index,
@@ -238,6 +277,9 @@ class MyScene extends Phaser.Scene {
         tile.tint = Number(color.replace("#", "0x"));
       }
     }
+  }
+  setDefaultLayer() {
+    this.map.currentLayerIndex = this.map.getLayerIndexByName("ShitLayer1");
   }
 
   toNumberAdjacencyList({
@@ -275,6 +317,8 @@ class MyScene extends Phaser.Scene {
       { x: 0, y: this.tileSize },
     ];
 
+    this.setPathLength(p.x, p.y, 0);
+
     for (const direction of directions) {
       const currentPosition = {
         x: p.x,
@@ -286,6 +330,14 @@ class MyScene extends Phaser.Scene {
         currentPosition.y + direction.y,
         true
       );
+
+      let pathLength = 1;
+      // this.setPathLength(
+      //   currentPosition.x + direction.x,
+      //   currentPosition.y + direction.y,
+      //   pathLength
+      // );
+
       if (tile === null || tile.index === -1) {
         console.error(
           tile,
@@ -297,8 +349,19 @@ class MyScene extends Phaser.Scene {
       }
 
       while (tile.index !== 2) {
-        this.counter++;
-        // if (this.counter > 20) throw Error("shit");
+        pathLength++;
+
+        const maxAllowedPathLength = 100;
+        if (pathLength > maxAllowedPathLength)
+          throw Error(
+            `there is a straight dash of over ${maxAllowedPathLength} tiles. Increase max to allow large dashes`
+          );
+
+        this.setPathLength(
+          currentPosition.x + direction.x,
+          currentPosition.y + direction.y,
+          pathLength
+        );
         currentPosition.x += direction.x;
         currentPosition.y += direction.y;
 
@@ -307,6 +370,7 @@ class MyScene extends Phaser.Scene {
           currentPosition.y + direction.y,
           true
         );
+
         if (tile.index === 0) {
           // When building the graph, set the tile to a small dot when dashing
           tile.index = 17;
@@ -319,6 +383,35 @@ class MyScene extends Phaser.Scene {
       }
     }
     return neighbors;
+  }
+  setPathLength(worldPosX: number, worldPosY: number, pathLength: number) {
+    this.walkableTiles.push({ x: worldPosX, y: worldPosY });
+
+    const tile = this.pathLengthColorLayer.getTileAtWorldXY(
+      worldPosX,
+      worldPosY,
+      true
+    );
+
+    console.log("setting path length");
+
+    tile.properties.maxPathLength =
+      tile.properties.maxPathLength === undefined
+        ? pathLength
+        : max(tile.properties.maxPathLength, pathLength);
+    tile.properties.minPathLength =
+      tile.properties.minPathLength === undefined
+        ? pathLength
+        : max(tile.properties.minPathLength, pathLength);
+
+    this.maxPathLength = Math.max(
+      this.maxPathLength,
+      tile.properties.maxPathLength
+    );
+    this.minPathLength = Math.min(
+      this.minPathLength,
+      tile.properties.minPathLength
+    );
   }
 
   createGraph(start: Point): Graph {
@@ -362,7 +455,6 @@ class MyScene extends Phaser.Scene {
     return output;
   }
 
-
   updateAngle() {
     this.player.angle =
       this.getAngle(this.movementDirection.x, this.movementDirection.y) - 90;
@@ -392,20 +484,38 @@ function adjacencyListToTransitionMatrix(adjacencyList: number[][]) {
 export function adjacencyListToSteadyState(
   adjacencyList: number[][]
 ): number[] {
-  const transitionMatrix = adjacencyListToTransitionMatrix(adjacencyList);
-
+  const transitionMatrix = adjacencyList;
+  // const transitionMatrix = adjacencyListToTransitionMatrix(adjacencyList);
+  // console.log(JSON.stringify(transitionMatrix.toArray()));
   const shit = math.pow(transitionMatrix, 10) as math.Matrix;
   const eigs = math.eigs(math.transpose(transitionMatrix));
 
-  // const values = eigs.values.map((val) => val).length;
+  if (!math.isMatrix(eigs.vectors))
+    throw Error("type of eigenvectors is not matrix");
+  const vectors = eigs.vectors;
+  window.vectors = vectors;
+  window.math = math;
   let correctVector: number[];
+
   eigs.values.forEach((val, index, array) => {
-    if (!isComplex(val) && abs(val - 1) < 0.0001)
-      correctVector = eigs.vectors[index];
+    console.log(JSON.stringify(val), abs(abs(val) - 1) < 0.0001);
+    console.log("not comple ", !isComplex(val));
+    if (!isComplex(val) && abs(abs(val) - 1) < 0.0001) {
+      const shit = math.row(vectors, index[0]).toArray()[0];
+      if (!Array.isArray(shit)) throw Error("entry in matrix is not an array");
+      if (typeof shit[0] !== "number")
+        throw Error("entry in vector is nut number");
+
+      console.log(index[0], vectors, shit);
+      correctVector = shit as number[];
+    }
   });
 
+  console.log(eigs);
   const normalizationScale = math.sum(correctVector);
-  const normalizedVector = math.divide(correctVector, normalizationScale);
+  console.log(normalizationScale, correctVector);
+
+  const normalizedVector = correctVector.map((val) => val / normalizationScale);
   console.log(normalizedVector);
 
   // eigs.values.map((val) => console.log(val));
@@ -431,4 +541,3 @@ var config: Phaser.Types.Core.GameConfig = {
 };
 
 const game = new Phaser.Game(config);
-
