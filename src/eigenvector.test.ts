@@ -1,3 +1,4 @@
+import math from "mathjs";
 import { adjacencyListToSteadyState } from ".";
 
 const nodes = ["1,0", "1,1", "0,1", "2,1", "1,2"];
@@ -18,6 +19,7 @@ export function testEigenvector() {
   //   ])
 
   console.log("steady state", adjacencyListToSteadyState(adjacencyList));
+  const matrix = math.matrix()
   //   transitionMatrix.expm1(5).;
   //   console.log("Powered", shit.toArray());
 

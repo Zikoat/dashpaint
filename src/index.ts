@@ -5,7 +5,7 @@ import * as scc from "strongly-connected-components";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
 import { testEigenvector } from "./eigenvector.test";
-import math from "mathjs";
+import math, { abs, isComplex, MathArray, MathNumericType } from "mathjs";
 
 type Point = { x: number; y: number };
 
@@ -36,7 +36,7 @@ class MyScene extends Phaser.Scene {
     testEigenvector();
     console.log("---stop eigenvector test");
 
-    const mapSize = 50;
+    const mapSize = 7;
     this.tileSize = 8;
     this.map = this.make.tilemap({
       // key: "map",
@@ -83,6 +83,7 @@ class MyScene extends Phaser.Scene {
     );
 
     this.colorMapConnectedComponents();
+    // this.colorMapSteadyState();
 
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
     this.cameras.main.zoomTo(4, 1000, "Quad");
@@ -106,6 +107,41 @@ class MyScene extends Phaser.Scene {
     // const showConComps = this.gui.add(conCompLayer, "alpha",0,1,0.01)
     // showConComps.onChange((alphaValue)=>conCompLayer.alpha = alphaValue)
   }
+
+  update() {
+    if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
+      if (this.input.keyboard.checkDown(this.cursors.left, 100)) {
+        this.movementDirection.x = -this.tileSize;
+        this.updateAngle();
+      } else if (this.input.keyboard.checkDown(this.cursors.right, 100)) {
+        this.movementDirection.x = this.tileSize;
+        this.updateAngle();
+      } else if (this.input.keyboard.checkDown(this.cursors.up, 100)) {
+        this.movementDirection.y = -this.tileSize;
+        this.updateAngle();
+      } else if (this.input.keyboard.checkDown(this.cursors.down, 100)) {
+        this.movementDirection.y = this.tileSize;
+        this.updateAngle();
+      }
+    }
+
+    var tile = this.layer.getTileAtWorldXY(
+      this.player.x + this.movementDirection.x,
+      this.player.y + this.movementDirection.y,
+      true
+    );
+
+    if (tile.index === 2) {
+      this.movementDirection = { x: 0, y: 0 };
+    } else {
+      this.player.x += this.movementDirection.x;
+      this.player.y += this.movementDirection.y;
+      // when walking over a tile, set the index to 0 to remove dots
+      tile.index = 0;
+      // tile.tint = 0xffff00;
+    }
+  }
+
   colorMapSteadyState() {
     this.graph = this.createGraph({
       x: this.player.x - this.tileSize / 2,
@@ -326,39 +362,6 @@ class MyScene extends Phaser.Scene {
     return output;
   }
 
-  update() {
-    if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
-      if (this.input.keyboard.checkDown(this.cursors.left, 100)) {
-        this.movementDirection.x = -this.tileSize;
-        this.updateAngle();
-      } else if (this.input.keyboard.checkDown(this.cursors.right, 100)) {
-        this.movementDirection.x = this.tileSize;
-        this.updateAngle();
-      } else if (this.input.keyboard.checkDown(this.cursors.up, 100)) {
-        this.movementDirection.y = -this.tileSize;
-        this.updateAngle();
-      } else if (this.input.keyboard.checkDown(this.cursors.down, 100)) {
-        this.movementDirection.y = this.tileSize;
-        this.updateAngle();
-      }
-    }
-
-    var tile = this.layer.getTileAtWorldXY(
-      this.player.x + this.movementDirection.x,
-      this.player.y + this.movementDirection.y,
-      true
-    );
-
-    if (tile.index === 2) {
-      this.movementDirection = { x: 0, y: 0 };
-    } else {
-      this.player.x += this.movementDirection.x;
-      this.player.y += this.movementDirection.y;
-      // when walking over a tile, set the index to 0 to remove dots
-      tile.index = 0;
-      // tile.tint = 0xffff00;
-    }
-  }
 
   updateAngle() {
     this.player.angle =
@@ -386,16 +389,40 @@ function adjacencyListToTransitionMatrix(adjacencyList: number[][]) {
   return matrix;
 }
 
-export function adjacencyListToSteadyState(adjacencyList: number[][]) {
+export function adjacencyListToSteadyState(
+  adjacencyList: number[][]
+): number[] {
   const transitionMatrix = adjacencyListToTransitionMatrix(adjacencyList);
 
-  const shit = math.pow(transitionMatrix, 2000) as math.Matrix;
-  return shit.toArray()[0] as number[];
+  const shit = math.pow(transitionMatrix, 10) as math.Matrix;
+  const eigs = math.eigs(math.transpose(transitionMatrix));
+
+  // const values = eigs.values.map((val) => val).length;
+  let correctVector: number[];
+  eigs.values.forEach((val, index, array) => {
+    if (!isComplex(val) && abs(val - 1) < 0.0001)
+      correctVector = eigs.vectors[index];
+  });
+
+  const normalizationScale = math.sum(correctVector);
+  const normalizedVector = math.divide(correctVector, normalizationScale);
+  console.log(normalizedVector);
+
+  // eigs.values.map((val) => console.log(val));
+  // console.log("eig vals",  );
+  console.log("eig vecs", eigs.vectors.toString());
+  const shit2 = shit.toArray()[0];
+  if (Array.isArray(shit2)) return shit2 as number[];
+  else throw Error("shit");
+  // return shit.toArray()[0] as number[];
+  // const shit2 = transitionMatrix.toArray()[0];
 }
 
-var config = {
+var config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
+  //@ts-ignore
   width: window.innerWidth,
+  //@ts-ignore
   height: window.innerHeight,
   parent: "phaser-example",
   pixelArt: true,
@@ -404,3 +431,4 @@ var config = {
 };
 
 const game = new Phaser.Game(config);
+
