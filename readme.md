@@ -1,13 +1,32 @@
-## Getting Started
+![Dashpaint Banner](/public/images/banner.png)
 
-### Cloning the repo
+# Dashpaint
+Game inspired by the android games "House paint" and "Tomb of the mask"
 
-```sh
-bun create blank ./NAME_HERE
-```
+## Getting started
 
-### Execute a file (eg. src/index.js)
-    
-```sh
-bun run ./src/index.js
-```
+### Build and run on windows
+
+1. start windows terminal
+2. `winget install Microsoft.VisualStudioCode` install vscode on windows
+3. install wsl2 [https://docs.microsoft.com/en-us/windows/wsl/install](https://docs.microsoft.com/en-us/windows/wsl/install)
+4. `wsl`
+5. `git config --global user.email "your_email@example.com"`
+6. `git config --global user.name "Your name"`
+7. install homebrew [https://brew.sh/](https://brew.sh/)
+8. do next steps as said in the homebrew command
+9. `brew install gh`
+10. `gh auth login`
+11. `gh repo clone https://github.com/Zikoat/dashpaint.git`
+12. `cd dashpaint`
+13. `sudo apt install unzip`****
+14. `curl [https://bun.sh/install](https://bun.sh/install) | bash` (install bun [https://bun.sh/](https://bun.sh/))
+15. `echo 'export BUN_INSTALL="$HOME/.bun"' >> ~/.bashrc` (from bun next steps)
+16. `echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> ~/.bashrc`(from bun next steps)
+17. `bun install`
+
+## Code structure
+
+No. 
+
+More features. 
