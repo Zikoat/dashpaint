@@ -24,9 +24,3 @@ Game inspired by the android games "House paint" and "Tomb of the mask"
 15. `echo 'export BUN_INSTALL="$HOME/.bun"' >> ~/.bashrc` (from bun next steps)
 16. `echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> ~/.bashrc`(from bun next steps)
 17. `bun install`
-
-## Code structure
-
-No. 
-
-More features. 
