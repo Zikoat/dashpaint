@@ -35,8 +35,8 @@ export class DashPaintScene extends Phaser.Scene {
   minPathLength = Infinity;
 
   preload() {
-    this.load.image("tiles", "../images/DashpaintTilesetV2.png");
-    this.load.image("character", "../images/DashpaintCharacter.png");
+    this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
+    this.load.image("character", "../dashpaint/images/DashpaintCharacter.png");
     // this.load.tilemapCSV("map", "../public/phaser3examples/grid.csv");
   }
 
