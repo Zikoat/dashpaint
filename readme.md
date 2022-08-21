@@ -1,11 +1,13 @@
 ![Dashpaint Banner](/public/images/banner.png)
 
 # Dashpaint
-Game inspired by the android games "House paint" and "Tomb of the mask"
+Game inspired by the android games "House paint" and "Tomb of the mask". This game is still work-in-progress
 
 ## Getting started
 
 ### Build and run on windows
+
+Instructions for myself to remember how to get started developing this project:
 
 1. start windows terminal
 2. `winget install Microsoft.VisualStudioCode` install vscode on windows
