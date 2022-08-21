@@ -33,6 +33,7 @@ export class DashPaintScene extends Phaser.Scene {
   walkableTiles: Point[] = [];
   maxPathLength = 0;
   minPathLength = Infinity;
+  mapSize = 20;
 
   preload() {
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
@@ -41,25 +42,27 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   create() {
-    console.log("---start eigenvector test");
-
-    // testEigenvector();
-    console.log("---stop eigenvector test");
-
-    const mapSize = 7;
     this.tileSize = 8;
+
+    this.gui = new dat.GUI();
+
+    this.resetGame();
+
+    this.cursors = this.input.keyboard.createCursorKeys();
+
+    this.gui
+      .add(this.connectedComponentsLayer, "alpha", 0, 1)
+      .name("Show reachability");
+
+  }
+
+  resetGame() {
     this.map = this.make.tilemap({
-      // key: "map",
-      width: mapSize,
-      height: mapSize,
+      width: this.mapSize,
+      height: this.mapSize,
       tileWidth: this.tileSize,
       tileHeight: this.tileSize,
     });
-
-    const playerSprite = this.textures.get("tiles");
-    const playerFrame = playerSprite.add("player", 0, 0, 24, 8, 8);
-    // console.log(playerSprite)
-
     this.tileset = this.map.addTilesetImage(
       "tiles",
       null,
@@ -68,12 +71,11 @@ export class DashPaintScene extends Phaser.Scene {
       0,
       0
     );
-
     // this.layer = map.createLayer(0, tileset, 0, 0);
     this.layer = this.map.createBlankLayer("ShitLayer1", this.tileset);
 
-    this.layer.fill(2, 0, 0, mapSize, mapSize);
-    this.layer.fill(1, 1, 1, mapSize - 2, mapSize - 2);
+    this.layer.fill(2, 0, 0, this.mapSize, this.mapSize);
+    this.layer.fill(1, 1, 1, this.mapSize - 2, this.mapSize - 2);
     this.layer.weightedRandomize(
       [
         { index: 0, weight: 4 }, // walkable
@@ -81,33 +83,19 @@ export class DashPaintScene extends Phaser.Scene {
       ],
       1,
       1,
-      mapSize - 2,
-      mapSize - 2
+      this.mapSize - 2,
+      this.mapSize - 2
     );
     this.layer.fill(0, 1, 1, 2, 1);
+
+    const playerSprite = this.textures.get("tiles");
+    const playerFrame = playerSprite.add("player", 0, 0, 24, 8, 8);
 
     this.player = this.add.image(
       this.tileSize + this.tileSize / 2,
       this.tileSize + this.tileSize / 2,
       playerSprite
     );
-
-    this.gui = new dat.GUI();
-
-    this.pathLengthColorLayer = this.map.createBlankLayer(
-      "pathLengthColorLayer",
-      this.tileset
-    );
-
-    this.colorMapConnectedComponents();
-    // this.colorMapSteadyState();
-    this.colorMapPathLengthMinMax();
-
-    this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
-    this.cameras.main.zoomTo(4, 1000, "Quad");
-
-    this.cursors = this.input.keyboard.createCursorKeys();
-
     const myValueToEdit = {
       playerTint: "#FFFFFF",
     };
@@ -119,11 +107,20 @@ export class DashPaintScene extends Phaser.Scene {
     });
     playerColor.setValue("#00ffff");
 
-    this.gui.add(this.connectedComponentsLayer, "alpha", 0, 1);
+    this.pathLengthColorLayer = this.map.createBlankLayer(
+      "pathLengthColorLayer",
+      this.tileset
+    );
+    this.setDefaultLayer();
 
-    // const showConComps = this.gui.add(conCompLayer, "alpha",0,1,0.01)
-    // showConComps.onChange((alphaValue)=>conCompLayer.alpha = alphaValue)
+    this.colorMapConnectedComponents();
+    // this.colorMapSteadyState();
+    this.colorMapPathLengthMinMax();
+
+    this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
+    this.cameras.main.zoomTo(4, 1000, "Quad");
   }
+
   colorMapPathLengthMinMax() {
     const colorScale = chroma.scale(["green", "yellow", "red"]);
     colorScale.domain([this.minPathLength, this.maxPathLength]);
@@ -141,9 +138,11 @@ export class DashPaintScene extends Phaser.Scene {
 
       tile.tint = colorScale(maxPathLength).num();
     }
-    this.pathLengthColorLayer.alpha = 0.5;
+    this.pathLengthColorLayer.alpha = 0;
     this.pathLengthColorLayer.depth = -2;
-    this.gui.add(this.pathLengthColorLayer, "alpha", 0, 1);
+    this.gui
+      .add(this.pathLengthColorLayer, "alpha", 0, 1)
+      .name("Show dash length");
   }
 
   update() {
@@ -255,7 +254,7 @@ export class DashPaintScene extends Phaser.Scene {
       "connectedComponents",
       this.tileset
     );
-    this.connectedComponentsLayer.alpha = 0.5;
+    this.connectedComponentsLayer.alpha = 0.75;
     this.connectedComponentsLayer.depth = -1;
 
     this.setDefaultLayer();
