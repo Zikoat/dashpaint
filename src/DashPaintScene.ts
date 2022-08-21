@@ -1,4 +1,3 @@
-console.log(" helle");
 import * as Phaser from "phaser";
 import { Graph } from "./Graph";
 import * as scc from "strongly-connected-components";
@@ -16,7 +15,7 @@ import math, {
 
 type Point = { x: number; y: number };
 
-class MyScene extends Phaser.Scene {
+export class DashPaintScene extends Phaser.Scene {
   movementDirection = { x: 0, y: 0 };
   player: Phaser.GameObjects.Image;
   layer: Phaser.Tilemaps.TilemapLayer;
@@ -36,8 +35,8 @@ class MyScene extends Phaser.Scene {
   minPathLength = Infinity;
 
   preload() {
-    this.load.image("tiles", "../public/images/DashpaintTilesetV2.png");
-    this.load.image("character", "../public/images/DashpaintCharacter.png");
+    this.load.image("tiles", "../images/DashpaintTilesetV2.png");
+    this.load.image("character", "../images/DashpaintCharacter.png");
     // this.load.tilemapCSV("map", "../public/phaser3examples/grid.csv");
   }
 
@@ -47,7 +46,7 @@ class MyScene extends Phaser.Scene {
     // testEigenvector();
     console.log("---stop eigenvector test");
 
-    const mapSize = 30;
+    const mapSize = 7;
     this.tileSize = 8;
     this.map = this.make.tilemap({
       // key: "map",
@@ -393,8 +392,6 @@ class MyScene extends Phaser.Scene {
       true
     );
 
-    console.log("setting path length");
-
     tile.properties.maxPathLength =
       tile.properties.maxPathLength === undefined
         ? pathLength
@@ -527,17 +524,3 @@ export function adjacencyListToSteadyState(
   // return shit.toArray()[0] as number[];
   // const shit2 = transitionMatrix.toArray()[0];
 }
-
-var config: Phaser.Types.Core.GameConfig = {
-  type: Phaser.AUTO,
-  //@ts-ignore
-  width: window.innerWidth,
-  //@ts-ignore
-  height: window.innerHeight,
-  parent: "phaser-example",
-  pixelArt: true,
-  backgroundColor: "#000000",
-  scene: [MyScene],
-};
-
-const game = new Phaser.Game(config);
