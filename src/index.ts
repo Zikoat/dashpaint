@@ -493,8 +493,8 @@ export function adjacencyListToSteadyState(
   if (!math.isMatrix(eigs.vectors))
     throw Error("type of eigenvectors is not matrix");
   const vectors = eigs.vectors;
-  window.vectors = vectors;
-  window.math = math;
+  // window.vectors = vectors;
+  // window.math = math;
   let correctVector: number[];
 
   eigs.values.forEach((val, index, array) => {
