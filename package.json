@@ -5,7 +5,8 @@
   "scripts": {
     "start": "next start",
     "build": "next build",
-    "dev": "next"
+    "dev": "next",
+    "export": "next export"
   },
   "devDependencies": {
     "@types/chroma-js": "^2.1.4",
