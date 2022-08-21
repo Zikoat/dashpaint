@@ -9,9 +9,9 @@ An ice-sliding puzzle game inspired by the android games "House paint" and "Tomb
 
 Instructions for myself to remember how to get started developing this project:
 
-1. start windows terminal
+1. start windows terminal in admin mode
 2. `winget install Microsoft.VisualStudioCode` install vscode on windows
-3. install wsl2 [https://docs.microsoft.com/en-us/windows/wsl/install](https://docs.microsoft.com/en-us/windows/wsl/install)
+3. `wsl --install`
 4. `wsl`
 5. `git config --global user.email "your_email@example.com"`
 6. `git config --global user.name "Your name"`
