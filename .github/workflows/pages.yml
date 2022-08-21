@@ -48,14 +48,7 @@ jobs:
       - name: Install dependencies
         run: bun install
       - name: Run build script in package.json
-        run: bun run build
-      - name: Static HTML export with Next.js
-        run: bun run next export
-      - name: copy file
-        uses: canastro/copy-file-action@master
-        with:
-          source: "out/dashpaint/images/DashPaintTilesetV2.png"
-          target: "out/images/DashPaintTilesetV2.png"
+        run: bun run ci
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:

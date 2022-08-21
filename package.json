@@ -3,9 +3,9 @@
   "version": "0.0.3",
   "module": "src/index.js",
   "scripts": {
-    "start": "next start",
     "build": "next build && next export",
-    "dev": "next"
+    "dev": "next",
+    "ci": "bun run build && mv out/dashpaint/images/ out/images/"
   },
   "devDependencies": {
     "@types/chroma-js": "^2.1.4",
