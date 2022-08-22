@@ -16,6 +16,13 @@ import { Swipe } from "phaser3-rex-plugins/plugins/gestures.js";
 
 type Point = { x: number; y: number };
 
+type SwipeExtended = Swipe & {
+  up: boolean;
+  down: boolean;
+  left: boolean;
+  right: boolean;
+};
+
 export class DashPaintScene extends Phaser.Scene {
   movementDirection = { x: 0, y: 0 };
   player: Phaser.GameObjects.Image;
@@ -35,7 +42,7 @@ export class DashPaintScene extends Phaser.Scene {
   maxPathLength = 0;
   minPathLength = Infinity;
   mapSize = 20;
-  swipe: Swipe;
+  swipe: SwipeExtended;
 
   preload() {
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
@@ -120,7 +127,7 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
     this.cameras.main.zoomTo(4, 1000, "Quad");
-    this.swipe = new Swipe(this, { dir: "4dir" });
+    this.swipe = new Swipe(this, { dir: "4dir" }) as SwipeExtended;
     this.swipe.on("swipe", function (swipe, gameObject, lastPointer) {
       console.log(swipe, gameObject, lastPointer);
     });
@@ -171,7 +178,7 @@ export class DashPaintScene extends Phaser.Scene {
     } else {
       this.updateAngle();
     }
-    
+
     var tile = this.layer.getTileAtWorldXY(
       this.player.x + this.movementDirection.x,
       this.player.y + this.movementDirection.y,
