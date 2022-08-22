@@ -10,6 +10,7 @@ export const DashPaintConfig: Phaser.Types.Core.GameConfig = {
   pixelArt: true,
   backgroundColor: "#000000",
   scene: [DashPaintScene],
+  
 };
 
 export const DashPaintGame = new Phaser.Game(DashPaintConfig);

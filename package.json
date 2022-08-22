@@ -22,12 +22,13 @@
     "chroma-js": "^2.4.2",
     "dat.gui": "^0.7.9",
     "mathjs": "^11.0.1",
-    "phaser": "^3.55.2",
-    "strongly-connected-components": "^1.0.1",
     "next": "latest",
+    "phaser": "^3.55.2",
+    "phaser3-rex-plugins": "^1.1.72",
     "react": "latest",
     "react-dom": "latest",
     "react-is": "^17.0.2",
-    "react-no-ssr": "^1.1.0"
+    "react-no-ssr": "^1.1.0",
+    "strongly-connected-components": "^1.0.1"
   }
 }

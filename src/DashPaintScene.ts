@@ -12,6 +12,7 @@ import math, {
   Matrix,
   max,
 } from "mathjs";
+import { Swipe } from "phaser3-rex-plugins/plugins/gestures.js";
 
 type Point = { x: number; y: number };
 
@@ -34,6 +35,7 @@ export class DashPaintScene extends Phaser.Scene {
   maxPathLength = 0;
   minPathLength = Infinity;
   mapSize = 20;
+  swipe: Swipe;
 
   preload() {
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
@@ -53,7 +55,6 @@ export class DashPaintScene extends Phaser.Scene {
     this.gui
       .add(this.connectedComponentsLayer, "alpha", 0, 1)
       .name("Show reachability");
-
   }
 
   resetGame() {
@@ -119,6 +120,10 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
     this.cameras.main.zoomTo(4, 1000, "Quad");
+    this.swipe = new Swipe(this, { dir: "4dir" });
+    this.swipe.on("swipe", function (swipe, gameObject, lastPointer) {
+      console.log(swipe, gameObject, lastPointer);
+    });
   }
 
   colorMapPathLengthMinMax() {
@@ -149,19 +154,24 @@ export class DashPaintScene extends Phaser.Scene {
     if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
       if (this.input.keyboard.checkDown(this.cursors.left, 100)) {
         this.movementDirection.x = -this.tileSize;
-        this.updateAngle();
       } else if (this.input.keyboard.checkDown(this.cursors.right, 100)) {
         this.movementDirection.x = this.tileSize;
-        this.updateAngle();
       } else if (this.input.keyboard.checkDown(this.cursors.up, 100)) {
         this.movementDirection.y = -this.tileSize;
-        this.updateAngle();
       } else if (this.input.keyboard.checkDown(this.cursors.down, 100)) {
         this.movementDirection.y = this.tileSize;
-        this.updateAngle();
+      } else if (this.swipe.isSwiped) {
+        console.log(" swiped");
+        console.log(this.swipe[0]);
+        if (this.swipe.left) this.movementDirection.x = -this.tileSize;
+        else if (this.swipe.right) this.movementDirection.x = this.tileSize;
+        else if (this.swipe.up) this.movementDirection.y = -this.tileSize;
+        else if (this.swipe.down) this.movementDirection.y = this.tileSize;
       }
+    } else {
+      this.updateAngle();
     }
-
+    
     var tile = this.layer.getTileAtWorldXY(
       this.player.x + this.movementDirection.x,
       this.player.y + this.movementDirection.y,
