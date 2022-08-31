@@ -1,18 +1,11 @@
 import * as Phaser from "phaser";
-import { Graph } from "./Graph";
-import * as scc from "strongly-connected-components";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
-import { testEigenvector } from "./eigenvector.test";
-import math, {
-  abs,
-  isComplex,
-  MathArray,
-  MathNumericType,
-  Matrix,
-  max,
-} from "mathjs";
-import { Swipe } from "phaser3-rex-plugins/plugins/gestures.js";
+import math, { abs, isComplex, max } from "mathjs";
+import { Pan, Swipe } from "phaser3-rex-plugins/plugins/gestures.js";
+// import createGraph, { Graph as NGraph } from "ngraph.graph";
+import { findScc, toAdjacencyList } from "./graphHelpers";
+import createGraph, { Graph as NGraph } from "ngraph.graph";
 
 type Point = { x: number; y: number };
 
@@ -25,24 +18,26 @@ type SwipeExtended = Swipe & {
 
 export class DashPaintScene extends Phaser.Scene {
   movementDirection = { x: 0, y: 0 };
-  player: Phaser.GameObjects.Image;
-  layer: Phaser.Tilemaps.TilemapLayer;
-  cursors: Phaser.Types.Input.Keyboard.CursorKeys;
-  passBotAgents: { x: number; y: number; velX: number; velY: number }[];
-  graph: Graph;
+  player!: Phaser.GameObjects.Image;
+  layer!: Phaser.Tilemaps.TilemapLayer;
+  cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
+  passBotAgents!: { x: number; y: number; velX: number; velY: number }[];
+  graph!: //| Graph
+  NGraph;
 
   counter = 0;
-  tileSize: number;
-  gui: dat.GUI;
-  map: Phaser.Tilemaps.Tilemap;
-  tileset: Phaser.Tilemaps.Tileset;
-  connectedComponentsLayer: Phaser.Tilemaps.TilemapLayer;
-  pathLengthColorLayer: Phaser.Tilemaps.TilemapLayer;
+  tileSize!: number;
+  gui!: dat.GUI;
+  map!: Phaser.Tilemaps.Tilemap;
+  tileset!: Phaser.Tilemaps.Tileset;
+  connectedComponentsLayer!: Phaser.Tilemaps.TilemapLayer;
+  pathLengthColorLayer!: Phaser.Tilemaps.TilemapLayer;
   walkableTiles: Point[] = [];
   maxPathLength = 0;
   minPathLength = Infinity;
   mapSize = 20;
-  swipe: SwipeExtended;
+  swipe!: SwipeExtended;
+  pan!: Pan;
 
   preload() {
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
@@ -73,7 +68,7 @@ export class DashPaintScene extends Phaser.Scene {
     });
     this.tileset = this.map.addTilesetImage(
       "tiles",
-      null,
+      undefined,
       this.tileSize,
       this.tileSize,
       0,
@@ -128,9 +123,7 @@ export class DashPaintScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
     this.cameras.main.zoomTo(4, 1000, "Quad");
     this.swipe = new Swipe(this, { dir: "4dir" }) as SwipeExtended;
-    this.swipe.on("swipe", function (swipe, gameObject, lastPointer) {
-      console.log(swipe, gameObject, lastPointer);
-    });
+    this.pan = new Pan(this);
   }
 
   colorMapPathLengthMinMax() {
@@ -168,8 +161,7 @@ export class DashPaintScene extends Phaser.Scene {
       } else if (this.input.keyboard.checkDown(this.cursors.down, 100)) {
         this.movementDirection.y = this.tileSize;
       } else if (this.swipe.isSwiped) {
-        console.log(" swiped");
-        console.log(this.swipe[0]);
+        console.log("swiped");
         if (this.swipe.left) this.movementDirection.x = -this.tileSize;
         else if (this.swipe.right) this.movementDirection.x = this.tileSize;
         else if (this.swipe.up) this.movementDirection.y = -this.tileSize;
@@ -196,72 +188,63 @@ export class DashPaintScene extends Phaser.Scene {
     }
   }
 
-  colorMapSteadyState() {
-    this.graph = this.createGraph({
-      x: this.player.x - this.tileSize / 2,
-      y: this.player.y - this.tileSize / 2,
-    });
+  // colorMapSteadyState() {
+  //   this.graph = this.createGraph({
+  //     x: this.player.x - this.tileSize / 2,
+  //     y: this.player.y - this.tileSize / 2,
+  //   });
 
-    this.graph.adjacencyList;
+  //   this.graph.adjacencyList;
 
-    const processedAdjacencyList = this.toNumberAdjacencyList({
-      adjacencyList: this.graph.adjacencyList,
-    });
+  //   const processedAdjacencyList = this.toNumberAdjacencyList({
+  //     adjacencyList: this.graph.adjacencyList,
+  //   });
 
-    const steadyState2 = adjacencyListToSteadyState(
-      processedAdjacencyList.numberAdjacencyList
-    );
-    const steadyState = math.multiply(
-      math.divide(steadyState2, math.max(steadyState2)),
-      5
-    ) as number[];
-    console.log(steadyState);
-    const sccInput: number[][] = processedAdjacencyList.numberAdjacencyList;
-    // const tileConnectedComponents = sccOutput.components.map((component) =>
-    //   component.map((sourceNumber) =>
-    //   )
-    // );
-    // console.log(tileConnectedComponents);
+  //   const steadyState2 = adjacencyListToSteadyState(
+  //     processedAdjacencyList.numberAdjacencyList
+  //   );
+  //   const steadyState = math.multiply(
+  //     math.divide(steadyState2, math.max(steadyState2)),
+  //     5
+  //   ) as number[];
+  //   console.log(steadyState);
+  //   const sccInput: number[][] = processedAdjacencyList.numberAdjacencyList;
+  //   // const tileConnectedComponents = sccOutput.components.map((component) =>
+  //   //   component.map((sourceNumber) =>
+  //   //   )
+  //   // );
+  //   // console.log(tileConnectedComponents);
 
-    const colors = chroma.scale(["red", "green"]);
+  //   const colors = chroma.scale(["red", "green"]);
 
-    for (const [index, nodeDifficulty] of steadyState.entries()) {
-      const color = colors(nodeDifficulty);
-      const tilePosition = this.stringToPoint(
-        processedAdjacencyList.values[index]
-      );
+  //   for (const [index, nodeDifficulty] of steadyState.entries()) {
+  //     const color = colors(nodeDifficulty);
+  //     const tilePosition = this.stringToPoint(
+  //       processedAdjacencyList.values[index]
+  //     );
 
-      const tile = this.layer.getTileAtWorldXY(tilePosition.x, tilePosition.y);
-      tile.index = 18;
-      tile.tint = color.num();
-    }
-  }
+  //     const tile = this.layer.getTileAtWorldXY(tilePosition.x, tilePosition.y);
+  //     tile.index = 18;
+  //     tile.tint = color.num();
+  //   }
+  // }
 
   colorMapConnectedComponents() {
-    this.graph = this.createGraph({
+    const startPoint = {
       x: this.player.x - this.tileSize / 2,
       y: this.player.y - this.tileSize / 2,
-    });
+    };
+    this.graph = this.createGraph(startPoint);
+    const processedAdjacencyList = toAdjacencyList(this.graph);
 
-    console.log(
-      // this.simplifyAdjacencyList(
-      this.graph.adjacencyList
-      // )
-    );
-
-    const processedAdjacencyList = this.toNumberAdjacencyList({
-      adjacencyList: this.graph.adjacencyList,
-    });
-
-    const sccInput: number[][] = processedAdjacencyList.numberAdjacencyList;
-    const sccOutput: { adjacencyList: number[][]; components: number[][] } =
-      scc(sccInput);
+    const sccOutput = findScc(this.graph);
     const tileConnectedComponents = sccOutput.components.map((component) =>
-      component.map((sourceNumber) =>
-        this.stringToPoint(processedAdjacencyList.values[sourceNumber])
-      )
+      component.map((sourceNumber) => {
+        if (typeof sourceNumber === "number")
+          throw new Error("A node id is a number, but it should be a string");
+        return this.stringToPoint(sourceNumber);
+      })
     );
-    console.log(tileConnectedComponents);
 
     const colors = chroma
       .scale(["yellow", "008ae5"])
@@ -281,6 +264,8 @@ export class DashPaintScene extends Phaser.Scene {
       tileConnectedComponent,
     ] of tileConnectedComponents.entries()) {
       const color = colors[index];
+      if (typeof color !== "string")
+        throw new Error(`could not get color of index ${index}`);
       for (const tileInComponent of tileConnectedComponent) {
         const tile = this.connectedComponentsLayer.getTileAtWorldXY(
           tileInComponent.x,
@@ -427,33 +412,35 @@ export class DashPaintScene extends Phaser.Scene {
     );
   }
 
-  createGraph(start: Point): Graph {
-    const result = new Graph();
+  createGraph(start: Point): NGraph {
+    const myNGraph = createGraph();
     const stack = [this.pointToString(start)];
-    const visited = {};
+    const visited: Record<string, boolean> = {};
     visited[this.pointToString(start)] = true;
-    let currentVertex: string;
-    while (stack.length) {
-      currentVertex = stack.pop();
+
+    let currentVertex: string | undefined;
+    while ((currentVertex = stack.pop())) {
       const neighbors = this.getNeighbors(
         this.stringToPoint(currentVertex)
       ).map(this.pointToString);
 
       for (const neighbor of neighbors) {
-        result.addEdge(currentVertex, neighbor);
+        myNGraph.addLink(currentVertex, neighbor);
         if (!visited[neighbor]) {
           visited[neighbor] = true;
           stack.push(neighbor);
         }
       }
     }
-    return result;
+    return myNGraph;
   }
+
   simplifyAdjacencyList(adjacencyList: { [x: string]: any }): any {
+    const tileSize = this.tileSize;
     function toSimpleString(p: Point): string {
-      return "" + p.x / this.tileSize + "," + p.y / this.tileSize;
+      return "" + p.x / tileSize + "," + p.y / tileSize;
     }
-    const output = {};
+    const output: Record<string, string[]> = {};
     for (const sourcePoint in adjacencyList) {
       if (Object.prototype.hasOwnProperty.call(adjacencyList, sourcePoint)) {
         const destinationPoints: string[] = adjacencyList[sourcePoint];
@@ -481,62 +468,62 @@ export class DashPaintScene extends Phaser.Scene {
   }
 }
 
-function adjacencyListToTransitionMatrix(adjacencyList: number[][]) {
-  //   const amountOfNodes = adjacencyList.length;
+// function adjacencyListToTransitionMatrix(adjacencyList: number[][]) {
+//   //   const amountOfNodes = adjacencyList.length;
 
-  const matrix = math.matrix("dense"); //amountOfNodes, amountOfNodes);
+//   const matrix = math.matrix("dense"); //amountOfNodes, amountOfNodes);
 
-  for (const [fromNode, edges] of adjacencyList.entries()) {
-    for (const toNode of edges) {
-      matrix.set([fromNode, toNode], 1 / edges.length);
-    }
-  }
-  return matrix;
-}
+//   for (const [fromNode, edges] of adjacencyList.entries()) {
+//     for (const toNode of edges) {
+//       matrix.set([fromNode, toNode], 1 / edges.length);
+//     }
+//   }
+//   return matrix;
+// }
 
-export function adjacencyListToSteadyState(
-  adjacencyList: number[][]
-): number[] {
-  const transitionMatrix = adjacencyList;
-  // const transitionMatrix = adjacencyListToTransitionMatrix(adjacencyList);
-  // console.log(JSON.stringify(transitionMatrix.toArray()));
-  const shit = math.pow(transitionMatrix, 10) as math.Matrix;
-  const eigs = math.eigs(math.transpose(transitionMatrix));
+// export function adjacencyListToSteadyState(
+//   adjacencyList: number[][]
+// ): number[] {
+//   const transitionMatrix = adjacencyList;
+//   // const transitionMatrix = adjacencyListToTransitionMatrix(adjacencyList);
+//   // console.log(JSON.stringify(transitionMatrix.toArray()));
+//   const shit = math.pow(transitionMatrix, 10) as math.Matrix;
+//   const eigs = math.eigs(math.transpose(transitionMatrix));
 
-  if (!math.isMatrix(eigs.vectors))
-    throw Error("type of eigenvectors is not matrix");
-  const vectors = eigs.vectors;
-  // window.vectors = vectors;
-  // window.math = math;
-  let correctVector: number[];
+//   if (!math.isMatrix(eigs.vectors))
+//     throw Error("type of eigenvectors is not matrix");
+//   const vectors = eigs.vectors;
+//   // window.vectors = vectors;
+//   // window.math = math;
+//   let correctVector: number[];
 
-  eigs.values.forEach((val, index, array) => {
-    console.log(JSON.stringify(val), abs(abs(val) - 1) < 0.0001);
-    console.log("not comple ", !isComplex(val));
-    if (!isComplex(val) && abs(abs(val) - 1) < 0.0001) {
-      const shit = math.row(vectors, index[0]).toArray()[0];
-      if (!Array.isArray(shit)) throw Error("entry in matrix is not an array");
-      if (typeof shit[0] !== "number")
-        throw Error("entry in vector is nut number");
+//   eigs.values.forEach((val, index, array) => {
+//     console.log(JSON.stringify(val), abs(abs(val) - 1) < 0.0001);
+//     console.log("not comple ", !isComplex(val));
+//     if (!isComplex(val) && abs(abs(val) - 1) < 0.0001) {
+//       const shit = math.row(vectors, index[0]).toArray()[0];
+//       if (!Array.isArray(shit)) throw Error("entry in matrix is not an array");
+//       if (typeof shit[0] !== "number")
+//         throw Error("entry in vector is nut number");
 
-      console.log(index[0], vectors, shit);
-      correctVector = shit as number[];
-    }
-  });
+//       console.log(index[0], vectors, shit);
+//       correctVector = shit as number[];
+//     }
+//   });
 
-  console.log(eigs);
-  const normalizationScale = math.sum(correctVector);
-  console.log(normalizationScale, correctVector);
+//   console.log(eigs);
+//   const normalizationScale = math.sum(correctVector);
+//   console.log(normalizationScale, correctVector);
 
-  const normalizedVector = correctVector.map((val) => val / normalizationScale);
-  console.log(normalizedVector);
+//   const normalizedVector = correctVector.map((val) => val / normalizationScale);
+//   console.log(normalizedVector);
 
-  // eigs.values.map((val) => console.log(val));
-  // console.log("eig vals",  );
-  console.log("eig vecs", eigs.vectors.toString());
-  const shit2 = shit.toArray()[0];
-  if (Array.isArray(shit2)) return shit2 as number[];
-  else throw Error("shit");
-  // return shit.toArray()[0] as number[];
-  // const shit2 = transitionMatrix.toArray()[0];
-}
+//   // eigs.values.map((val) => console.log(val));
+//   // console.log("eig vals",  );
+//   console.log("eig vecs", eigs.vectors.toString());
+//   const shit2 = shit.toArray()[0];
+//   if (Array.isArray(shit2)) return shit2 as number[];
+//   else throw Error("shit");
+//   // return shit.toArray()[0] as number[];
+//   // const shit2 = transitionMatrix.toArray()[0];
+// }
