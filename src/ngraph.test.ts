@@ -2,7 +2,6 @@ import createGraph, { Graph, Node, NodeId } from "ngraph.graph";
 import { describe, expect, test } from "vitest";
 import { nba } from "ngraph.path";
 import scc from "strongly-connected-components";
-import { assert } from "console";
 
 describe("graph", () => {
   test("it should create a bidirectional graph", () => {
@@ -18,10 +17,10 @@ describe("graph", () => {
     g.addNode("server", { status: "on", ip: "12345" });
 
     const node = g.getNode("server");
-    expect(node.data.status).toBe("on");
+    expect(node?.data.status).toBe("on");
 
     const worldNode = g.getNode("world");
-    expect(worldNode.data).toBe("custom data");
+    expect(worldNode?.data).toBe("custom data");
     expect(1).toBe(1);
   });
 
@@ -53,33 +52,79 @@ describe("path", () => {
 });
 
 describe("connected components", () => {
-  test.skip("it should find connected components", () => {
+  test("it should find connected components in a simple graph", () => {
     const g = createGraph();
     g.addLink(1, 2);
 
-    const connectedComponents = findConnectedComponents(g);
+    const connectedComponents = findScc(g);
 
     expect(connectedComponents).toMatchInlineSnapshot(`
-      [
-        [
-          1,
-          2,
+      {
+        "componentAdjacencyList": [
+          [],
+          [
+            0,
+          ],
         ],
-      ]
+        "components": [
+          [
+            2,
+          ],
+          [
+            1,
+          ],
+        ],
+      }
     `);
   });
+
+  test("it should find strongly connected components in a graph", () => {
+    const g = createGraph();
+    g.addLink("1,0", "1,1");
+    g.addLink("1,1", "1,0");
+    g.addLink("1,1", "0,1");
+    g.addLink("1,1", "2,1");
+    g.addLink("0,1", "2,1");
+    g.addLink("2,1", "0,1");
+
+    const graphSccOutput = findScc(g);
+
+    expect(graphSccOutput).toMatchInlineSnapshot(`
+      {
+        "componentAdjacencyList": [
+          [],
+          [
+            0,
+          ],
+        ],
+        "components": [
+          [
+            "2,1",
+            "0,1",
+          ],
+          [
+            "1,1",
+            "1,0",
+          ],
+        ],
+      }
+    `);
+  });
+
 });
 
 test("adjacency list to graph", () => {
   const nodes: NodeId[] = ["1,0", "1,1", "0,1", "2,1"];
 
-  var adjacencyList = [
-    [1], // 0
-    [0, 2, 3], // 1
-    [3], // 2
-    [2], // 3
-  ];
+  var adjacencyList = [[1], [0, 2, 3], [3], [2]];
 
+  const graph2 = toGraph(adjacencyList, nodes);
+
+  expect(graph2.getNodesCount()).toMatchInlineSnapshot("4");
+  expect(graph2.getLinksCount()).toMatchInlineSnapshot("6");
+});
+
+function toGraph(adjacencyList: number[][], nodes: NodeId[]): Graph {
   const g = createGraph();
   for (const [fromNode, toNodes] of adjacencyList.entries()) {
     const fromNodeId = nodes[fromNode];
@@ -96,22 +141,14 @@ test("adjacency list to graph", () => {
       g.addLink(fromNodeId, toNodeId);
     }
   }
+  return g;
+}
 
-  expect(g.getNodesCount()).toMatchInlineSnapshot("4");
-  expect(g.getLinksCount()).toMatchInlineSnapshot("6");
-});
-
-test("graph to adjacency list", () => {
-  const g = createGraph();
-
-  g.addLink("a", "b");
-  g.addLink("b", "c");
-  g.addLink("c", "a");
-
+function toAdjacencyList(graph: Graph) {
   const nodes: NodeId[] = [];
   const adjacencyList: number[][] = [];
 
-  g.forEachLink((link) => {
+  graph.forEachLink((link) => {
     let fromIndex = nodes.findIndex((node) => node === link.fromId);
     if (fromIndex === -1) {
       nodes.push(link.fromId);
@@ -130,48 +167,29 @@ test("graph to adjacency list", () => {
       throw new Error(`Could not add a link from ${fromIndex} to ${toIndex}`);
   });
 
-  const output = { nodes, adjacencyList };
+  return { nodes, adjacencyList };
+}
 
-  expect(output).toStrictEqual({
-    nodes: ["a", "b", "c"],
-    adjacencyList: [[1], [2], [0]],
-  });
-});
+interface SccOutput {
+  components: number[][];
+  adjacencyList: number[][];
+}
 
-function findConnectedComponents(graph: Graph) {}
+function findScc(graph: Graph): {
+  components: NodeId[][];
+  componentAdjacencyList: number[][];
+} {
+  const adjacencyListGraph = toAdjacencyList(graph);
+  const sccOutput: SccOutput = scc(adjacencyListGraph.adjacencyList);
 
-console.log();
+  const components = sccOutput.components.map((component) =>
+    component.map((nodeIndex) => {
+      const node = adjacencyListGraph.nodes[nodeIndex];
+      if (node === undefined)
+        throw new Error(`couldnt find node index ${nodeIndex}`);
+      return node;
+    })
+  );
 
-test("shit", () => {
-  const nodes = ["1,0", "1,1", "0,1", "2,1"];
-
-  var adjacencyList = [
-    [1], // 0
-    [0, 2, 3], // 1
-    [3], // 2
-    [2], // 3
-  ];
-
-  const sccOutput = scc(adjacencyList);
-
-  expect(sccOutput).toMatchInlineSnapshot(`
-    {
-      "adjacencyList": [
-        [],
-        [
-          0,
-        ],
-      ],
-      "components": [
-        [
-          3,
-          2,
-        ],
-        [
-          1,
-          0,
-        ],
-      ],
-    }
-  `);
-});
+  return { componentAdjacencyList: sccOutput.adjacencyList, components };
+}
