@@ -3,3 +3,5 @@ node_modules
 /out/
 node_modules.bun
 package-lock.json
+
+bun.lockb
