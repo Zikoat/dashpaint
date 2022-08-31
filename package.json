@@ -5,7 +5,8 @@
   "scripts": {
     "build": "next build && next export",
     "dev": "next",
-    "ci": "bun run build && mv out/dashpaint/images/ out/images/"
+    "ci": "bun run build && mv out/dashpaint/images/ out/images/",
+    "test": "vitest"
   },
   "devDependencies": {
     "@types/chroma-js": "^2.1.4",

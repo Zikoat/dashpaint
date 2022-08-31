@@ -1,36 +1,22 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
     "module": "esnext",
     "target": "esnext",
-    // "bun-types" is the important part
-    "types": [
-      "bun-types"
-    ],
+    "types": ["bun-types"],
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "typeRoots": [
-      "src/customTypings",
-      "node_modules/@types"
-    ],
-    "allowJs": true,
+    "typeRoots": ["src/customTypings", "node_modules/@types"],
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
     "incremental": true,
     "isolatedModules": true,
-    "jsx": "preserve"
+    "jsx": "preserve",
+    "noUncheckedIndexedAccess": true
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
 }
