@@ -1,4 +1,5 @@
-import * as scc from "strongly-connected-components";
+import scc from "strongly-connected-components";
+import { expect, test } from "vitest";
 
 const nodes = ["1,0", "1,1", "0,1", "2,1"];
 
@@ -10,3 +11,7 @@ var adjacencyList = [
 ];
 
 console.log(scc(adjacencyList));
+
+test("shit", () => {
+  expect(1).toBe(1);
+});

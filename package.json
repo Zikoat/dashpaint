@@ -21,14 +21,19 @@
   "dependencies": {
     "chroma-js": "^2.4.2",
     "dat.gui": "^0.7.9",
+    "jest": "^29.0.1",
+    "jest-environment-jsdom": "^29.0.1",
     "mathjs": "^11.0.1",
     "next": "latest",
+    "ngraph.graph": "^20.0.0",
+    "ngraph.path": "^1.4.0",
     "phaser": "^3.55.2",
     "phaser3-rex-plugins": "^1.1.72",
     "react": "latest",
     "react-dom": "latest",
     "react-is": "^17.0.2",
     "react-no-ssr": "^1.1.0",
-    "strongly-connected-components": "^1.0.1"
+    "strongly-connected-components": "^1.0.1",
+    "vitest": "^0.22.1"
   }
 }
