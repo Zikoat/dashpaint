@@ -131,11 +131,7 @@ export class DashPaintScene extends Phaser.Scene {
     colorScale.domain([this.minPathLength, this.maxPathLength]);
 
     for (const point of this.walkableTiles) {
-      const tile = this.pathLengthColorLayer.getTileAtWorldXY(
-        point.x,
-        point.y,
-        true
-      );
+      const tile = this.pathLengthColorLayer.getTileAt(point.x, point.y, true);
       tile.index = 2;
       const maxPathLength = tile.properties.maxPathLength;
       if (typeof maxPathLength !== "number")
@@ -153,35 +149,45 @@ export class DashPaintScene extends Phaser.Scene {
   update() {
     if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
       if (this.input.keyboard.checkDown(this.cursors.left, 100)) {
-        this.movementDirection.x = -this.tileSize;
+        this.movementDirection.x = -1;
       } else if (this.input.keyboard.checkDown(this.cursors.right, 100)) {
-        this.movementDirection.x = this.tileSize;
+        this.movementDirection.x = 1;
       } else if (this.input.keyboard.checkDown(this.cursors.up, 100)) {
-        this.movementDirection.y = -this.tileSize;
+        this.movementDirection.y = -1;
       } else if (this.input.keyboard.checkDown(this.cursors.down, 100)) {
-        this.movementDirection.y = this.tileSize;
+        this.movementDirection.y = 1;
       } else if (this.swipe.isSwiped) {
         console.log("swiped");
-        if (this.swipe.left) this.movementDirection.x = -this.tileSize;
-        else if (this.swipe.right) this.movementDirection.x = this.tileSize;
-        else if (this.swipe.up) this.movementDirection.y = -this.tileSize;
-        else if (this.swipe.down) this.movementDirection.y = this.tileSize;
+        if (this.swipe.left) this.movementDirection.x = -1;
+        else if (this.swipe.right) this.movementDirection.x = 1;
+        else if (this.swipe.up) this.movementDirection.y = -1;
+        else if (this.swipe.down) this.movementDirection.y = 1;
       }
     } else {
       this.updateAngle();
     }
 
-    var tile = this.layer.getTileAtWorldXY(
-      this.player.x + this.movementDirection.x,
-      this.player.y + this.movementDirection.y,
-      true
+    const playerTilePosition = this.layer.worldToTileXY(
+      this.player.x,
+      this.player.y
     );
+
+    const nextPosition = playerTilePosition.add(this.movementDirection);
+
+    var tile = this.layer.getTileAt(
+      nextPosition.x,
+      nextPosition.y,
+      true
+    ) as Phaser.Tilemaps.Tile | null;
+
+    if (tile === null)
+      throw Error(`Could not get tile at ${nextPosition.x},${nextPosition.y}`);
 
     if (tile.index === 2) {
       this.movementDirection = { x: 0, y: 0 };
     } else {
-      this.player.x += this.movementDirection.x;
-      this.player.y += this.movementDirection.y;
+      this.player.x += this.movementDirection.x * this.tileSize;
+      this.player.y += this.movementDirection.y * this.tileSize;
       // when walking over a tile, set the index to 0 to remove dots
       tile.index = 0;
       // tile.tint = 0xffff00;
@@ -230,9 +236,14 @@ export class DashPaintScene extends Phaser.Scene {
   // }
 
   colorMapConnectedComponents() {
+    const playerTilePosition = this.layer.worldToTileXY(
+      this.player.x,
+      this.player.y
+    );
+
     const startPoint = {
-      x: this.player.x - this.tileSize / 2,
-      y: this.player.y - this.tileSize / 2,
+      x: playerTilePosition.x,
+      y: playerTilePosition.y,
     };
     this.graph = this.createGraph(startPoint);
     const processedAdjacencyList = toAdjacencyList(this.graph);
@@ -267,7 +278,7 @@ export class DashPaintScene extends Phaser.Scene {
       if (typeof color !== "string")
         throw new Error(`could not get color of index ${index}`);
       for (const tileInComponent of tileConnectedComponent) {
-        const tile = this.connectedComponentsLayer.getTileAtWorldXY(
+        const tile = this.connectedComponentsLayer.getTileAt(
           tileInComponent.x,
           tileInComponent.y,
           true
@@ -311,21 +322,21 @@ export class DashPaintScene extends Phaser.Scene {
     const neighbors: Point[] = [];
 
     const directions = [
-      { x: -this.tileSize, y: 0 },
-      { x: this.tileSize, y: 0 },
-      { x: 0, y: -this.tileSize },
-      { x: 0, y: this.tileSize },
+      { x: -1, y: 0 },
+      { x: 1, y: 0 },
+      { x: 0, y: -1 },
+      { x: 0, y: 1 },
     ];
 
     this.setPathLength(p.x, p.y, 0);
 
     for (const direction of directions) {
-      const currentPosition = {
+      let currentPosition = {
         x: p.x,
         y: p.y,
       };
 
-      let tile = this.layer.getTileAtWorldXY(
+      let tile = this.layer.getTileAt(
         currentPosition.x + direction.x,
         currentPosition.y + direction.y,
         true
@@ -357,15 +368,16 @@ export class DashPaintScene extends Phaser.Scene {
             `there is a straight dash of over ${maxAllowedPathLength} tiles. Increase max to allow large dashes`
           );
 
-        this.setPathLength(
-          currentPosition.x + direction.x,
-          currentPosition.y + direction.y,
-          pathLength
-        );
-        currentPosition.x += direction.x;
-        currentPosition.y += direction.y;
+        const newPosition = {
+          x: currentPosition.x + direction.x,
+          y: currentPosition.y + direction.y,
+        };
 
-        tile = this.layer.getTileAtWorldXY(
+        this.setPathLength(newPosition.x, newPosition.y, pathLength);
+
+        currentPosition = newPosition;
+
+        tile = this.layer.getTileAt(
           currentPosition.x + direction.x,
           currentPosition.y + direction.y,
           true
@@ -384,14 +396,10 @@ export class DashPaintScene extends Phaser.Scene {
     }
     return neighbors;
   }
-  setPathLength(worldPosX: number, worldPosY: number, pathLength: number) {
-    this.walkableTiles.push({ x: worldPosX, y: worldPosY });
+  setPathLength(tilePosX: number, tilePosY: number, pathLength: number) {
+    this.walkableTiles.push({ x: tilePosX, y: tilePosY });
 
-    const tile = this.pathLengthColorLayer.getTileAtWorldXY(
-      worldPosX,
-      worldPosY,
-      true
-    );
+    const tile = this.pathLengthColorLayer.getTileAt(tilePosX, tilePosY, true);
 
     tile.properties.maxPathLength =
       tile.properties.maxPathLength === undefined
@@ -438,7 +446,7 @@ export class DashPaintScene extends Phaser.Scene {
   simplifyAdjacencyList(adjacencyList: { [x: string]: any }): any {
     const tileSize = this.tileSize;
     function toSimpleString(p: Point): string {
-      return "" + p.x / tileSize + "," + p.y / tileSize;
+      return "" + p.x + "," + p.y;
     }
     const output: Record<string, string[]> = {};
     for (const sourcePoint in adjacencyList) {
