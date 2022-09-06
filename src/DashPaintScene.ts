@@ -1,11 +1,12 @@
 import * as Phaser from "phaser";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
-import math, { abs, isComplex, max } from "mathjs";
-import { Pan, Swipe } from "phaser3-rex-plugins/plugins/gestures.js";
+import { max } from "mathjs";
+import { Pan, Swipe, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
 // import createGraph, { Graph as NGraph } from "ngraph.graph";
 import { findScc, toAdjacencyList } from "./graphHelpers";
 import createGraph, { Graph as NGraph } from "ngraph.graph";
+import { htmlPhaserFunctions } from "../pages";
 
 type Point = { x: number; y: number };
 
@@ -38,14 +39,17 @@ export class DashPaintScene extends Phaser.Scene {
   mapSize = 20;
   swipe!: SwipeExtended;
   pan!: Pan;
+  tap!: Tap;
+  startButton!: Phaser.GameObjects.Text;
 
   preload() {
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
     this.load.image("character", "../dashpaint/images/DashpaintCharacter.png");
-    // this.load.tilemapCSV("map", "../public/phaser3examples/grid.csv");
   }
 
   create() {
+    htmlPhaserFunctions.loadFinished();
+
     this.tileSize = 8;
 
     this.gui = new dat.GUI();
@@ -57,6 +61,9 @@ export class DashPaintScene extends Phaser.Scene {
     this.gui
       .add(this.connectedComponentsLayer, "alpha", 0, 1)
       .name("Show reachability");
+
+    htmlPhaserFunctions.startEdit = ()=>this.startEdit();
+    htmlPhaserFunctions.stopEdit = ()=>this.stopEdit();
   }
 
   resetGame() {
@@ -121,9 +128,37 @@ export class DashPaintScene extends Phaser.Scene {
     this.colorMapPathLengthMinMax();
 
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
-    this.cameras.main.zoomTo(4, 1000, "Quad");
+    this.cameras.main.zoomTo(3, 1000, "Quad");
+
     this.swipe = new Swipe(this, { dir: "4dir" }) as SwipeExtended;
     this.pan = new Pan(this);
+    this.tap = new Tap(this, {
+      tapInterval: 0,
+    });
+    const tapCallback = function tapCallback(
+      tap: Tap & { scene: DashPaintScene; worldX: number; worldY: number },
+      _gameObject: Phaser.GameObjects.GameObject,
+      _lastPointer: Phaser.Input.Pointer
+    ) {
+      const scene = tap.scene as DashPaintScene;
+      const tile: Phaser.Tilemaps.Tile | null = scene.layer.getTileAtWorldXY(
+        tap.worldX,
+        tap.worldY,
+        true
+      );
+
+      if (tile === null) {
+        console.warn("Pressed tile was null");
+        return;
+      }
+
+      if (htmlPhaserFunctions.isEditing) {
+        if (tile.index === 2) tile.index = 0;
+        else tile.index = 2;
+      }
+    };
+
+    this.tap.on("tap", tapCallback);
   }
 
   colorMapPathLengthMinMax() {
@@ -147,51 +182,65 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   update() {
-    if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
-      if (this.input.keyboard.checkDown(this.cursors.left, 100)) {
-        this.movementDirection.x = -1;
-      } else if (this.input.keyboard.checkDown(this.cursors.right, 100)) {
-        this.movementDirection.x = 1;
-      } else if (this.input.keyboard.checkDown(this.cursors.up, 100)) {
-        this.movementDirection.y = -1;
-      } else if (this.input.keyboard.checkDown(this.cursors.down, 100)) {
-        this.movementDirection.y = 1;
-      } else if (this.swipe.isSwiped) {
-        console.log("swiped");
-        if (this.swipe.left) this.movementDirection.x = -1;
-        else if (this.swipe.right) this.movementDirection.x = 1;
-        else if (this.swipe.up) this.movementDirection.y = -1;
-        else if (this.swipe.down) this.movementDirection.y = 1;
+    if (!htmlPhaserFunctions.isEditing) {
+      if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
+        if (this.input.keyboard.checkDown(this.cursors.left, 100)) {
+          this.movementDirection.x = -1;
+        } else if (this.input.keyboard.checkDown(this.cursors.right, 100)) {
+          this.movementDirection.x = 1;
+        } else if (this.input.keyboard.checkDown(this.cursors.up, 100)) {
+          this.movementDirection.y = -1;
+        } else if (this.input.keyboard.checkDown(this.cursors.down, 100)) {
+          this.movementDirection.y = 1;
+        } else if (this.swipe.isSwiped) {
+          console.log("swiped");
+          if (this.swipe.left) this.movementDirection.x = -1;
+          else if (this.swipe.right) this.movementDirection.x = 1;
+          else if (this.swipe.up) this.movementDirection.y = -1;
+          else if (this.swipe.down) this.movementDirection.y = 1;
+        }
+      } else {
+        this.updateAngle();
       }
-    } else {
-      this.updateAngle();
+
+      const playerTilePosition = this.layer.worldToTileXY(
+        this.player.x,
+        this.player.y
+      );
+
+      const nextPosition = playerTilePosition.add(this.movementDirection);
+
+      var tile = this.layer.getTileAt(
+        nextPosition.x,
+        nextPosition.y,
+        true
+      ) as Phaser.Tilemaps.Tile | null;
+
+      if (tile === null)
+        throw Error(
+          `Could not get tile at ${nextPosition.x},${nextPosition.y}`
+        );
+
+      if (tile.index === 2) {
+        this.movementDirection = { x: 0, y: 0 };
+      } else {
+        this.player.x += this.movementDirection.x * this.tileSize;
+        this.player.y += this.movementDirection.y * this.tileSize;
+
+        // when walking over a tile, set the index to 0 to remove dots
+        tile.index = 0;
+      }
     }
-
-    const playerTilePosition = this.layer.worldToTileXY(
-      this.player.x,
-      this.player.y
-    );
-
-    const nextPosition = playerTilePosition.add(this.movementDirection);
-
-    var tile = this.layer.getTileAt(
-      nextPosition.x,
-      nextPosition.y,
-      true
-    ) as Phaser.Tilemaps.Tile | null;
-
-    if (tile === null)
-      throw Error(`Could not get tile at ${nextPosition.x},${nextPosition.y}`);
-
-    if (tile.index === 2) {
-      this.movementDirection = { x: 0, y: 0 };
-    } else {
-      this.player.x += this.movementDirection.x * this.tileSize;
-      this.player.y += this.movementDirection.y * this.tileSize;
-      // when walking over a tile, set the index to 0 to remove dots
-      tile.index = 0;
-      // tile.tint = 0xffff00;
-    }
+  }
+  startEdit() {
+    this.player.tint = 0x00ffff;
+    this.player.alpha = 0.5;
+    this.connectedComponentsLayer.alpha = 0;
+  }
+  stopEdit() {
+    this.player.tint = 0x00ffff;
+    this.player.alpha = 1;
+    this.connectedComponentsLayer.alpha = 0.75;
   }
 
   // colorMapSteadyState() {
@@ -385,7 +434,7 @@ export class DashPaintScene extends Phaser.Scene {
 
         if (tile.index === 0) {
           // When building the graph, set the tile to a small dot when dashing
-          tile.index = 17;
+          // tile.index = 17;
           // tile.tint = 0xffff00
         }
       }
@@ -444,7 +493,6 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   simplifyAdjacencyList(adjacencyList: { [x: string]: any }): any {
-    const tileSize = this.tileSize;
     function toSimpleString(p: Point): string {
       return "" + p.x + "," + p.y;
     }
