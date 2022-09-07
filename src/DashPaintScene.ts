@@ -44,7 +44,6 @@ export class DashPaintScene extends Phaser.Scene {
 
   preload() {
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
-    this.load.image("character", "../dashpaint/images/DashpaintCharacter.png");
   }
 
   create() {
@@ -81,7 +80,7 @@ export class DashPaintScene extends Phaser.Scene {
       0,
       0
     );
-    // this.layer = map.createLayer(0, tileset, 0, 0);
+
     this.layer = this.map.createBlankLayer("ShitLayer1", this.tileset);
 
     this.layer.fill(2, 0, 0, this.mapSize, this.mapSize);
