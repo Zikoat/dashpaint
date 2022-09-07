@@ -3,10 +3,10 @@ import chroma from "chroma-js";
 import * as dat from "dat.gui";
 import { max } from "mathjs";
 import { Pan, Swipe, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
-// import createGraph, { Graph as NGraph } from "ngraph.graph";
-import { findScc, toAdjacencyList } from "./graphHelpers";
+import { findScc } from "./graphHelpers";
 import createGraph, { Graph as NGraph } from "ngraph.graph";
 import { htmlPhaserFunctions } from "../pages";
+import assert from "assert";
 
 type Point = { x: number; y: number };
 
@@ -23,12 +23,10 @@ export class DashPaintScene extends Phaser.Scene {
   layer!: Phaser.Tilemaps.TilemapLayer;
   cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   passBotAgents!: { x: number; y: number; velX: number; velY: number }[];
-  graph!: //| Graph
-  NGraph;
 
   counter = 0;
-  tileSize!: number;
-  gui!: dat.GUI;
+  tileSize = 8;
+  gui = new dat.GUI();
   map!: Phaser.Tilemaps.Tilemap;
   tileset!: Phaser.Tilemaps.Tileset;
   connectedComponentsLayer!: Phaser.Tilemaps.TilemapLayer;
@@ -41,6 +39,11 @@ export class DashPaintScene extends Phaser.Scene {
   pan!: Pan;
   tap!: Tap;
   startButton!: Phaser.GameObjects.Text;
+  spawnPoint = { x: 1, y: 1 };
+  movementQueue: Point[] = [];
+  maxScore = 0;
+  currentScore = 0;
+  scoreCounter!: Phaser.GameObjects.Text;
 
   preload() {
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
@@ -49,29 +52,13 @@ export class DashPaintScene extends Phaser.Scene {
   create() {
     htmlPhaserFunctions.loadFinished();
 
-    this.tileSize = 8;
-
-    this.gui = new dat.GUI();
-
-    this.resetGame();
-
-    this.cursors = this.input.keyboard.createCursorKeys();
-
-    this.gui
-      .add(this.connectedComponentsLayer, "alpha", 0, 1)
-      .name("Show reachability");
-
-    htmlPhaserFunctions.startEdit = ()=>this.startEdit();
-    htmlPhaserFunctions.stopEdit = ()=>this.stopEdit();
-  }
-
-  resetGame() {
     this.map = this.make.tilemap({
       width: this.mapSize,
       height: this.mapSize,
       tileWidth: this.tileSize,
       tileHeight: this.tileSize,
     });
+
     this.tileset = this.map.addTilesetImage(
       "tiles",
       undefined,
@@ -83,6 +70,65 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.layer = this.map.createBlankLayer("ShitLayer1", this.tileset);
 
+    const playerSprite = this.textures.get("tiles");
+    playerSprite.add("player", 0, 0, 24, this.tileSize, this.tileSize);
+
+    this.player = this.add.image(0, 0, playerSprite);
+    this.player.tint = 0x00ffff;
+
+    this.pathLengthColorLayer = this.map.createBlankLayer(
+      "pathLengthColorLayer",
+      this.tileset
+    );
+    this.connectedComponentsLayer = this.map.createBlankLayer(
+      "connectedComponents",
+      this.tileset
+    );
+    this.connectedComponentsLayer.alpha = 0.75;
+    this.connectedComponentsLayer.depth = -1;
+    this.setDefaultLayer();
+
+    this.cursors = this.input.keyboard.createCursorKeys();
+
+    this.gui
+      .add(this.connectedComponentsLayer, "alpha", 0, 1)
+      .name("Show reachability");
+
+    htmlPhaserFunctions.startEdit = () => this.startEdit();
+    htmlPhaserFunctions.stopEdit = () => this.stopEdit();
+
+    this.input.keyboard.on("keydown-UP", () => {
+      this.enqueueMovement("up");
+    });
+    this.input.keyboard.on("keydown-DOWN", () => {
+      this.enqueueMovement("down");
+    });
+    this.input.keyboard.on("keydown-LEFT", () => {
+      this.enqueueMovement("left");
+    });
+    this.input.keyboard.on("keydown-RIGHT", () => {
+      this.enqueueMovement("right");
+    });
+
+    this.swipe = new Swipe(this, { dir: "4dir" }) as SwipeExtended;
+
+    this.pan = new Pan(this);
+    this.tap = new Tap(this, {
+      tapInterval: 0,
+    });
+
+    this.tap.on("tap", this.handleTap);
+
+    this.scoreCounter = this.add.text(0, -15, "test", {
+      color: "white",
+      fontStyle: "strong",
+      resolution: 5,
+    });
+
+    this.resetGame();
+  }
+
+  resetGame() {
     this.layer.fill(2, 0, 0, this.mapSize, this.mapSize);
     this.layer.fill(1, 1, 1, this.mapSize - 2, this.mapSize - 2);
     this.layer.weightedRandomize(
@@ -97,30 +143,7 @@ export class DashPaintScene extends Phaser.Scene {
     );
     this.layer.fill(0, 1, 1, 2, 1);
 
-    const playerSprite = this.textures.get("tiles");
-    const playerFrame = playerSprite.add("player", 0, 0, 24, 8, 8);
-
-    this.player = this.add.image(
-      this.tileSize + this.tileSize / 2,
-      this.tileSize + this.tileSize / 2,
-      playerSprite
-    );
-    const myValueToEdit = {
-      playerTint: "#FFFFFF",
-    };
-
-    const playerColor = this.gui.addColor(myValueToEdit, "playerTint");
-    playerColor.onChange((color) => {
-      console.log("changing player color to ", color);
-      this.player.tint = chroma(color).num();
-    });
-    playerColor.setValue("#00ffff");
-
-    this.pathLengthColorLayer = this.map.createBlankLayer(
-      "pathLengthColorLayer",
-      this.tileset
-    );
-    this.setDefaultLayer();
+    this.setPlayerPosition(this.spawnPoint);
 
     this.colorMapConnectedComponents();
     // this.colorMapSteadyState();
@@ -128,21 +151,26 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
     this.cameras.main.zoomTo(3, 1000, "Quad");
+  }
 
-    this.swipe = new Swipe(this, { dir: "4dir" }) as SwipeExtended;
-    this.pan = new Pan(this);
-    this.tap = new Tap(this, {
-      tapInterval: 0,
-    });
-    const tapCallback = function tapCallback(
-      tap: Tap & { scene: DashPaintScene; worldX: number; worldY: number },
-      _gameObject: Phaser.GameObjects.GameObject,
-      _lastPointer: Phaser.Input.Pointer
-    ) {
-      const scene = tap.scene as DashPaintScene;
-      const tile: Phaser.Tilemaps.Tile | null = scene.layer.getTileAtWorldXY(
-        tap.worldX,
-        tap.worldY,
+  handleTap(
+    tap: Tap & { scene: DashPaintScene; worldX: number; worldY: number },
+    _gameObject: Phaser.GameObjects.GameObject,
+    _lastPointer: Phaser.Input.Pointer
+  ) {
+    const scene = tap.scene as DashPaintScene;
+    const tapPoint = scene.layer.worldToTileXY(tap.worldX, tap.worldY);
+
+    const isOutOfBounds =
+      tapPoint.x < 1 ||
+      tapPoint.y < 1 ||
+      tapPoint.x >= this.mapSize ||
+      tapPoint.x >= this.mapSize;
+
+    if (!isOutOfBounds && htmlPhaserFunctions.isEditing) {
+      const tile: Phaser.Tilemaps.Tile | null = scene.layer.getTileAt(
+        tapPoint.x,
+        tapPoint.y,
         true
       );
 
@@ -151,13 +179,11 @@ export class DashPaintScene extends Phaser.Scene {
         return;
       }
 
-      if (htmlPhaserFunctions.isEditing) {
-        if (tile.index === 2) tile.index = 0;
-        else tile.index = 2;
-      }
-    };
+      if (tile.index === 2) tile.index = 0;
+      else tile.index = 2;
 
-    this.tap.on("tap", tapCallback);
+      scene.colorMapConnectedComponents();
+    }
   }
 
   colorMapPathLengthMinMax() {
@@ -181,65 +207,117 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   update() {
+    this.validateMovement();
     if (!htmlPhaserFunctions.isEditing) {
+      if (this.swipe.isSwiped) {
+        console.log("swiped");
+        if (this.swipe.left) this.enqueueMovement("left");
+        else if (this.swipe.right) this.enqueueMovement("right");
+        else if (this.swipe.up) this.enqueueMovement("up");
+        else if (this.swipe.down) this.enqueueMovement("down");
+      }
+
       if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
-        if (this.input.keyboard.checkDown(this.cursors.left, 100)) {
-          this.movementDirection.x = -1;
-        } else if (this.input.keyboard.checkDown(this.cursors.right, 100)) {
-          this.movementDirection.x = 1;
-        } else if (this.input.keyboard.checkDown(this.cursors.up, 100)) {
-          this.movementDirection.y = -1;
-        } else if (this.input.keyboard.checkDown(this.cursors.down, 100)) {
-          this.movementDirection.y = 1;
-        } else if (this.swipe.isSwiped) {
-          console.log("swiped");
-          if (this.swipe.left) this.movementDirection.x = -1;
-          else if (this.swipe.right) this.movementDirection.x = 1;
-          else if (this.swipe.up) this.movementDirection.y = -1;
-          else if (this.swipe.down) this.movementDirection.y = 1;
+        let validMovement = false;
+
+        while (!validMovement && this.movementQueue.length > 0) {
+          const nextMovement = this.movementQueue.shift();
+          assert(nextMovement, "Tried dequeueing while queue is empty");
+
+          const nextPosition = this.getPlayerPosition().add(nextMovement);
+          if (this.isWalkable(nextPosition)) {
+            validMovement = true;
+            this.movementDirection = nextMovement;
+          }
         }
       } else {
         this.updateAngle();
-      }
-
-      const playerTilePosition = this.layer.worldToTileXY(
-        this.player.x,
-        this.player.y
-      );
-
-      const nextPosition = playerTilePosition.add(this.movementDirection);
-
-      var tile = this.layer.getTileAt(
-        nextPosition.x,
-        nextPosition.y,
-        true
-      ) as Phaser.Tilemaps.Tile | null;
-
-      if (tile === null)
-        throw Error(
-          `Could not get tile at ${nextPosition.x},${nextPosition.y}`
+        const nextPosition = this.getPlayerPosition().add(
+          this.movementDirection
         );
-
-      if (tile.index === 2) {
-        this.movementDirection = { x: 0, y: 0 };
-      } else {
-        this.player.x += this.movementDirection.x * this.tileSize;
-        this.player.y += this.movementDirection.y * this.tileSize;
-
-        // when walking over a tile, set the index to 0 to remove dots
-        tile.index = 0;
+        if (this.isWalkable(nextPosition)) {
+          this.setPlayerPosition(nextPosition);
+        } else {
+          this.movementDirection = { x: 0, y: 0 };
+        }
+      }
+      const currentTile = this.layer.getTileAt(
+        this.getPlayerPosition().x,
+        this.getPlayerPosition().y
+      );
+      if (currentTile.index === 17) {
+        currentTile.index = 0;
+        this.currentScore++;
       }
     }
+
+    this.scoreCounter.text = `Dots left: ${this.maxScore - this.currentScore}`;
   }
+
+  isWalkable(p: Point) {
+    const tile = this.layer.getTileAt(
+      p.x,
+      p.y,
+      true
+    ) as Phaser.Tilemaps.Tile | null;
+
+    if (!tile) return true;
+
+    return tile.index !== 2;
+  }
+
+  enqueueMovement(direction: "up" | "down" | "left" | "right") {
+    const nextMovement = new Phaser.Math.Vector2(0, 0);
+
+    if (direction === "left") nextMovement.x = -1;
+    else if (direction === "right") nextMovement.x = 1;
+    else if (direction === "up") nextMovement.y = -1;
+    else if (direction === "down") nextMovement.y = 1;
+
+    this.movementQueue.push(nextMovement);
+  }
+
+  simplifyMovement = (p: Point) => `${p.x},${p.y}`;
+
+  validateMovement() {
+    assert(
+      this.isValidMovementVector(this.movementDirection),
+      "movement direction is invalid"
+    );
+    for (const movement of this.movementQueue) {
+      assert(
+        this.isValidMovementVector(movement),
+        "an entry in movementQueue is invalid"
+      );
+    }
+  }
+
+  isValidMovementVector(p: Point) {
+    const length = Math.abs(p.x) + Math.abs(p.y);
+    if (!(length === 1 || length === 0)) return false;
+    if (p.x !== 0 && p.y !== 0) return false;
+    return true;
+  }
+
+  setPlayerPosition(point: Point) {
+    const worldPosition = this.layer.tileToWorldXY(point.x, point.y);
+    this.player.setPosition(
+      worldPosition.x + this.tileSize / 2,
+      worldPosition.y + this.tileSize / 2
+    );
+  }
+
+  getPlayerPosition(): Phaser.Math.Vector2 {
+    return this.layer.worldToTileXY(this.player.x, this.player.y);
+  }
+
   startEdit() {
-    this.player.tint = 0x00ffff;
+    this.setPlayerPosition(this.spawnPoint);
     this.player.alpha = 0.5;
-    this.connectedComponentsLayer.alpha = 0;
   }
+
   stopEdit() {
-    this.player.tint = 0x00ffff;
     this.player.alpha = 1;
-    this.connectedComponentsLayer.alpha = 0.75;
   }
 
   // colorMapSteadyState() {
@@ -284,19 +362,9 @@ export class DashPaintScene extends Phaser.Scene {
   // }
 
   colorMapConnectedComponents() {
-    const playerTilePosition = this.layer.worldToTileXY(
-      this.player.x,
-      this.player.y
-    );
+    const graph = this.createGraph(this.getPlayerPosition());
 
-    const startPoint = {
-      x: playerTilePosition.x,
-      y: playerTilePosition.y,
-    };
-    this.graph = this.createGraph(startPoint);
-    const processedAdjacencyList = toAdjacencyList(this.graph);
-
-    const sccOutput = findScc(this.graph);
+    const sccOutput = findScc(graph);
     const tileConnectedComponents = sccOutput.components.map((component) =>
       component.map((sourceNumber) => {
         if (typeof sourceNumber === "number")
@@ -309,15 +377,14 @@ export class DashPaintScene extends Phaser.Scene {
       .scale(["yellow", "008ae5"])
       .colors(tileConnectedComponents.length);
 
-    this.connectedComponentsLayer = this.map.createBlankLayer(
-      "connectedComponents",
-      this.tileset
+    this.connectedComponentsLayer.replaceByIndex(
+      2,
+      0,
+      0,
+      0,
+      this.mapSize,
+      this.mapSize
     );
-    this.connectedComponentsLayer.alpha = 0.75;
-    this.connectedComponentsLayer.depth = -1;
-
-    this.setDefaultLayer();
-
     for (const [
       index,
       tileConnectedComponent,
@@ -331,12 +398,47 @@ export class DashPaintScene extends Phaser.Scene {
           tileInComponent.y,
           true
         );
-        // Set tiles that are nodes in the connected component to a big dot
+
         tile.index = 2;
         tile.tint = Number(color.replace("#", "0x"));
       }
     }
+
+    this.layer.replaceByIndex(17, 0, 0, 0, this.mapSize, this.mapSize);
+
+    console.log(`going through ${graph.getLinksCount()} edges`);
+    graph.forEachLink((link) => {
+      assert(typeof link.fromId === "string");
+      assert(typeof link.toId === "string");
+      const fromPoint = this.stringToPoint(link.fromId);
+      const toPoint = this.stringToPoint(link.toId);
+
+      const dash = toPoint.subtract(fromPoint);
+      const movementDirection = new Phaser.Math.Vector2(dash).normalize();
+      assert(
+        this.isValidMovementVector(movementDirection),
+        `${this.simplifyMovement(
+          movementDirection
+        )} is not a valid movement vector`
+      );
+      for (let i = 0; i < dash.length(); i++) {
+        const currentPosition = new Phaser.Math.Vector2(movementDirection)
+          .scale(i)
+          .add(fromPoint);
+        const tile = this.layer.getTileAt(
+          currentPosition.x,
+          currentPosition.y,
+          true
+        ) as Phaser.Tilemaps.Tile | null;
+        if (tile && tile.index !== 17) {
+          tile.index = 17;
+          this.maxScore++;
+        }
+      }
+    });
+    console.log("max score:", this.maxScore);
   }
+
   setDefaultLayer() {
     this.map.currentLayerIndex = this.map.getLayerIndexByName("ShitLayer1");
   }
@@ -362,8 +464,8 @@ export class DashPaintScene extends Phaser.Scene {
     return JSON.stringify({ x: p.x, y: p.y });
   }
 
-  stringToPoint(s: string): Point {
-    return JSON.parse(s);
+  stringToPoint(s: string): Phaser.Math.Vector2 {
+    return new Phaser.Math.Vector2(JSON.parse(s));
   }
 
   getNeighbors(p: Point): Point[] {
@@ -430,12 +532,6 @@ export class DashPaintScene extends Phaser.Scene {
           currentPosition.y + direction.y,
           true
         );
-
-        if (tile.index === 0) {
-          // When building the graph, set the tile to a small dot when dashing
-          // tile.index = 17;
-          // tile.tint = 0xffff00
-        }
       }
 
       if (currentPosition.x !== p.x || currentPosition.y !== p.y) {
@@ -444,6 +540,7 @@ export class DashPaintScene extends Phaser.Scene {
     }
     return neighbors;
   }
+
   setPathLength(tilePosX: number, tilePosY: number, pathLength: number) {
     this.walkableTiles.push({ x: tilePosX, y: tilePosY });
 
@@ -476,6 +573,13 @@ export class DashPaintScene extends Phaser.Scene {
 
     let currentVertex: string | undefined;
     while ((currentVertex = stack.pop())) {
+      const position = this.stringToPoint(currentVertex);
+      const tile = this.layer.getTileAt(
+        position.x,
+        position.y,
+        true
+      ) as Phaser.Tilemaps.Tile | null;
+
       const neighbors = this.getNeighbors(
         this.stringToPoint(currentVertex)
       ).map(this.pointToString);
