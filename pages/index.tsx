@@ -33,7 +33,6 @@ export default function DashPaintPage(): JSX.Element {
   const [isEditing, setIsEditing] = useState(false);
 
   htmlPhaserFunctions.loadFinished = () => {
-    console.log("loading finished");
     setLoadFinished(true);
   };
   htmlPhaserFunctions.clickEdit = () => {

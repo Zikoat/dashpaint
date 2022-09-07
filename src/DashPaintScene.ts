@@ -122,7 +122,7 @@ export class DashPaintScene extends Phaser.Scene {
     this.scoreCounter = this.add.text(0, -15, "test", {
       color: "white",
       fontStyle: "strong",
-      resolution: 5,
+      resolution: 10,
     });
 
     this.resetGame();
@@ -145,9 +145,9 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.setPlayerPosition(this.spawnPoint);
 
-    this.colorMapConnectedComponents();
+    this.analyzeMap();
     // this.colorMapSteadyState();
-    this.colorMapPathLengthMinMax();
+    // this.colorMapPathLengthMinMax();
 
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
     this.cameras.main.zoomTo(3, 1000, "Quad");
@@ -182,7 +182,7 @@ export class DashPaintScene extends Phaser.Scene {
       if (tile.index === 2) tile.index = 0;
       else tile.index = 2;
 
-      scene.colorMapConnectedComponents();
+      scene.analyzeMap();
     }
   }
 
@@ -251,7 +251,7 @@ export class DashPaintScene extends Phaser.Scene {
       }
     }
 
-    this.scoreCounter.text = `Dots left: ${this.maxScore - this.currentScore}`;
+    this.scoreCounter.text = `dots: ${this.maxScore - this.currentScore}`;
   }
 
   isWalkable(p: Point) {
@@ -314,6 +314,8 @@ export class DashPaintScene extends Phaser.Scene {
   startEdit() {
     this.setPlayerPosition(this.spawnPoint);
     this.player.alpha = 0.5;
+    this.currentScore = 0;
+    this.analyzeMap();
   }
 
   stopEdit() {
@@ -361,7 +363,7 @@ export class DashPaintScene extends Phaser.Scene {
   //   }
   // }
 
-  colorMapConnectedComponents() {
+  analyzeMap() {
     const graph = this.createGraph(this.getPlayerPosition());
 
     const sccOutput = findScc(graph);
@@ -406,7 +408,7 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.layer.replaceByIndex(17, 0, 0, 0, this.mapSize, this.mapSize);
 
-    console.log(`going through ${graph.getLinksCount()} edges`);
+    this.maxScore = 0;
     graph.forEachLink((link) => {
       assert(typeof link.fromId === "string");
       assert(typeof link.toId === "string");
@@ -436,7 +438,6 @@ export class DashPaintScene extends Phaser.Scene {
         }
       }
     });
-    console.log("max score:", this.maxScore);
   }
 
   setDefaultLayer() {
