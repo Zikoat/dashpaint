@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencil } from "@fortawesome/free-solid-svg-icons";
+import {
+  faPencil,
+  faRotateRight,
+} from "@fortawesome/free-solid-svg-icons";
 import loadingAnimation from "../public/dashpaint/animations/loadingAnimation.gif";
 
 const LoadWithoutSSR = dynamic(() => import("../src/ReactGame"), {
@@ -14,6 +17,7 @@ type GlobalFunctions = {
   stopEdit: () => void;
   loadFinished: () => void;
   isEditing: boolean;
+  clickReset: () => void;
 };
 
 function defaultImplementation() {
@@ -26,6 +30,7 @@ export let htmlPhaserFunctions: GlobalFunctions = {
   startEdit: defaultImplementation,
   loadFinished: defaultImplementation,
   isEditing: false,
+  clickReset: defaultImplementation,
 };
 
 export default function DashPaintPage(): JSX.Element {
@@ -50,23 +55,48 @@ export default function DashPaintPage(): JSX.Element {
   return (
     <>
       {loadFinished ? (
-        <div
-          style={{
-            backgroundColor: "black",
-            border: "2px solid white",
-            position: "absolute",
-            top: "1rem",
-            left: "1rem",
-            padding: "0.30rem",
-          }}
-          onClick={htmlPhaserFunctions.clickEdit}
-        >
-          <FontAwesomeIcon
-            icon={faPencil}
-            style={{ color: pencilColor }}
-            size={"3x"}
-          />
-        </div>
+        <>
+          <div
+            className="menu"
+            style={{
+              borderColor: "#222",
+              position: "absolute",
+              top: "1rem",
+              left: "1rem",
+            }}
+          >
+            <button
+              style={{
+                backgroundColor: "black",
+                border: "2px solid white",
+                padding: "0.30rem",
+                margin: "0.25rem",
+              }}
+              onClick={htmlPhaserFunctions.clickReset}
+            >
+              <FontAwesomeIcon
+                icon={faRotateRight}
+                style={{ color: "white" }}
+                size={"3x"}
+              />
+            </button>
+            <button
+              style={{
+                backgroundColor: "black",
+                border: "2px solid white",
+                padding: "0.30rem",
+                margin: "0.25rem",
+              }}
+              onClick={htmlPhaserFunctions.clickEdit}
+            >
+              <FontAwesomeIcon
+                icon={faPencil}
+                style={{ color: pencilColor }}
+                size={"3x"}
+              />
+            </button>
+          </div>
+        </>
       ) : (
         <>
           <div

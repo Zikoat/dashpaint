@@ -96,6 +96,7 @@ export class DashPaintScene extends Phaser.Scene {
 
     htmlPhaserFunctions.startEdit = () => this.startEdit();
     htmlPhaserFunctions.stopEdit = () => this.stopEdit();
+    htmlPhaserFunctions.clickReset = () => this.resetGame();
 
     this.input.keyboard.on("keydown-UP", () => {
       this.enqueueMovement("up");
