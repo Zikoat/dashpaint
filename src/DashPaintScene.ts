@@ -8,6 +8,8 @@ import createGraph, { Graph as NGraph } from "ngraph.graph";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { Point } from "./Point";
+import { Dir4 } from "./Dir4";
+import { DashEngine } from "./DashEngine";
 
 type SwipeExtended = Swipe & {
   up: boolean;
@@ -43,6 +45,7 @@ export class DashPaintScene extends Phaser.Scene {
   maxScore = 0;
   currentScore = 0;
   scoreCounter!: Phaser.GameObjects.Text;
+  dashEngine = new DashEngine();
 
   preload() {
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
@@ -266,7 +269,7 @@ export class DashPaintScene extends Phaser.Scene {
     return tile.index !== 2;
   }
 
-  enqueueMovement(direction: "up" | "down" | "left" | "right") {
+  enqueueMovement(direction: Dir4) {
     const nextMovement = new Phaser.Math.Vector2(0, 0);
 
     if (direction === "left") nextMovement.x = -1;
