@@ -4,7 +4,7 @@
   "module": "src/index.js",
   "scripts": {
     "build": "next build && next export",
-    "start": "next",
+    "start": "bun i && next",
     "ci": "bun run build && mv out/dashpaint/images/ out/images/",
     "test": "vitest"
   },
