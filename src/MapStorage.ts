@@ -1,4 +1,5 @@
-import { Point } from "./Point";
+import { Point } from "./Helpers";
+
 
 export class MapStorage {
   private data: Record<number, Record<number, number>> = {};
