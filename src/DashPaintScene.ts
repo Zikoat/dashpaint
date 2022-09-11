@@ -1,14 +1,21 @@
+import { inspect } from "util"; // or directly
 import * as Phaser from "phaser";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
-import { max } from "mathjs";
-import { Pan, Swipe, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
+import { max, nthRootDependencies } from "mathjs";
+import {
+  Pan,
+  Pinch,
+  Swipe,
+  Tap,
+} from "phaser3-rex-plugins/plugins/gestures.js";
 import { findScc } from "./graphHelpers";
 import createGraph, { Graph as NGraph } from "ngraph.graph";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
 import { Dir4, Point } from "./Helpers";
+import { json } from "stream/consumers";
 
 type SwipeExtended = Swipe & {
   up: boolean;
@@ -45,6 +52,8 @@ export class DashPaintScene extends Phaser.Scene {
   currentScore = 0;
   scoreCounter!: Phaser.GameObjects.Text;
   dashEngine = new DashEngine();
+  pinch!: Pinch;
+  zoom = 3;
 
   preload() {
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
@@ -115,11 +124,27 @@ export class DashPaintScene extends Phaser.Scene {
     this.swipe = new Swipe(this, { dir: "4dir" }) as SwipeExtended;
 
     this.pan = new Pan(this);
+
     this.tap = new Tap(this, {
       tapInterval: 0,
     });
-
     this.tap.on("tap", this.handleTap);
+
+    this.pinch = new Pinch(this);
+    this.pinch.on("pinch", (pinch: Pinch) => {
+      this.zoom *= pinch.scaleFactor;
+
+      this.cameras.main.setScroll(
+        this.cameras.main.scrollX - pinch.movementCenterX/2,
+        this.cameras.main.scrollY - pinch.movementCenterY/2
+      );
+      this.cameras.main.zoom = this.zoom;
+      // this.cameras.main.worldView.x+=pinch.movementCenterX
+      // this.cameras.main.worldView.y+=pinch.movementCenterY
+
+      this.cameras.main.stopFollow();
+      this.scoreCounter.text = pinch.centerX.toString();
+    });
 
     this.scoreCounter = this.add.text(0, -15, "test", {
       color: "white",
@@ -152,7 +177,7 @@ export class DashPaintScene extends Phaser.Scene {
     // this.colorMapPathLengthMinMax();
 
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
-    this.cameras.main.zoomTo(3, 1000, "Quad");
+    // this.cameras.main.zoomTo(this.zoom, 1000, "Quad");
   }
 
   handleTap(
@@ -253,7 +278,7 @@ export class DashPaintScene extends Phaser.Scene {
       }
     }
 
-    this.scoreCounter.text = `dots: ${this.maxScore - this.currentScore}`;
+    // this.scoreCounter.text = `dots: ${this.maxScore - this.currentScore}`;
   }
 
   isWalkable(p: Point) {
