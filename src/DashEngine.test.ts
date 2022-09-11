@@ -65,10 +65,11 @@ describe("DashEngine", () => {
       height: 3,
     });
     expect(map).toMatchInlineSnapshot(
-      `"#####
-    #.#.#
-    #####
-    "`
+      `
+      "#####
+      #.#.#
+      #####"
+    `
     );
   });
 });

@@ -7,9 +7,8 @@ import { findScc } from "./graphHelpers";
 import createGraph, { Graph as NGraph } from "ngraph.graph";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
-import { Point } from "./Point";
-import { Dir4 } from "./Dir4";
 import { DashEngine } from "./DashEngine";
+import { Dir4, Point } from "./Helpers";
 
 type SwipeExtended = Swipe & {
   up: boolean;
