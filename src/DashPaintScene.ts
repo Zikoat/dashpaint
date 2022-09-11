@@ -15,7 +15,6 @@ import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
 import { Dir4, Point } from "./Helpers";
-import { json } from "stream/consumers";
 
 type SwipeExtended = Swipe & {
   up: boolean;
@@ -135,15 +134,12 @@ export class DashPaintScene extends Phaser.Scene {
       this.zoom *= pinch.scaleFactor;
 
       this.cameras.main.setScroll(
-        this.cameras.main.scrollX - pinch.movementCenterX/2,
-        this.cameras.main.scrollY - pinch.movementCenterY/2
+        this.cameras.main.scrollX - pinch.movementCenterX / 2,
+        this.cameras.main.scrollY - pinch.movementCenterY / 2
       );
       this.cameras.main.zoom = this.zoom;
-      // this.cameras.main.worldView.x+=pinch.movementCenterX
-      // this.cameras.main.worldView.y+=pinch.movementCenterY
 
       this.cameras.main.stopFollow();
-      this.scoreCounter.text = pinch.centerX.toString();
     });
 
     this.scoreCounter = this.add.text(0, -15, "test", {
@@ -177,7 +173,7 @@ export class DashPaintScene extends Phaser.Scene {
     // this.colorMapPathLengthMinMax();
 
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
-    // this.cameras.main.zoomTo(this.zoom, 1000, "Quad");
+    this.cameras.main.setZoom(this.zoom);
   }
 
   handleTap(
@@ -278,7 +274,7 @@ export class DashPaintScene extends Phaser.Scene {
       }
     }
 
-    // this.scoreCounter.text = `dots: ${this.maxScore - this.currentScore}`;
+    this.scoreCounter.text = `dots: ${this.maxScore - this.currentScore}`;
   }
 
   isWalkable(p: Point) {
