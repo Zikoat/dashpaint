@@ -1,6 +1,4 @@
-import { callbackify } from "util";
-import { Dir4 } from "./Dir4";
-import { addVectors, ORIGIN, Point, Rect } from "./Helpers";
+import { addVectors, Dir4, ORIGIN, Point, Rect } from "./Helpers";
 import { MapStorage } from "./MapStorage";
 
 export interface DashEngineOptions {
@@ -69,18 +67,20 @@ export class DashEngine {
   getRectAsString(rect: Rect): string {
     let asciiOutput = "";
     let counter = 0;
-    const map = this.forEachTileInRect(
-      { x: -1, y: -1, width: 3, height: 3 },
-      (tile) => {
-        counter++;
 
-        asciiOutput += tile.collidable ? "#" : ".";
+    this.forEachTileInRect(rect, (tile) => {
+      counter++;
 
-        if (tile.x === 1) {
-          asciiOutput += "\n";
-        }
+      asciiOutput += tile.collidable ? "#" : ".";
+
+      if (
+        tile.x === rect.x + rect.width - 1 &&
+        tile.y !== rect.y + rect.height - 1
+      ) {
+        asciiOutput += "\n";
       }
-    );
+    });
+
     return asciiOutput;
   }
 }
