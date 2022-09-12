@@ -14,7 +14,7 @@ import {
 import { MapStorage } from "./MapStorage";
 import seedrandom from "seedrandom";
 import createGraph, { Graph, Link, Node } from "ngraph.graph";
-import { expect } from "vitest";
+import assert from "assert";
 
 export interface DashEngineOptions {
   spawnPoint?: Point;
@@ -286,8 +286,10 @@ export class DashEngine {
 
   private stringToPoint(s: string): Point {
     const parsedPoint = JSON.parse(s);
-    expect(typeof parsedPoint.x).toBe("number");
-    expect(typeof parsedPoint.y).toBe("number");
+    
+    assert(typeof parsedPoint.x === "number");
+    assert(typeof parsedPoint.y === "number");
+
     return parsedPoint;
   }
 
