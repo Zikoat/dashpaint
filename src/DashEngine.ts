@@ -1,20 +1,30 @@
 import {
   addVectors,
   Dir4,
+  DIRECTIONS,
+  isEqual,
+  normalizeVector,
   ORIGIN,
   Point,
   Rect,
+  scaleVector,
   subtractVectors,
+  vectorLength,
 } from "./Helpers";
 import { MapStorage } from "./MapStorage";
 import seedrandom from "seedrandom";
-import createGraph, { Graph } from "ngraph.graph";
+import createGraph, { Graph, Link, Node } from "ngraph.graph";
 import { expect } from "vitest";
 
 export interface DashEngineOptions {
   spawnPoint?: Point;
   mapStorage?: MapStorage;
 }
+
+type Dash = {
+  from: Point;
+  to: Point;
+};
 
 export class DashEngine {
   spawnPoint: Point;
@@ -119,7 +129,6 @@ export class DashEngine {
   analyzeRect(rect: Rect): AnalysedTile[] {
     const analyzedTile: AnalysedTile = {
       isWall: false,
-      canReach: false,
       canCollide: false,
       canStop: false,
       numberOfDashesPassingOver: 0,
@@ -138,110 +147,89 @@ export class DashEngine {
     ];
   }
 
-  analyzePoint(point: Point): AnalysedTile {
+  analyzePoint(pointToAnalyze: Point): AnalysedTile {
     let isWall;
-    let canReach = false;
     let canCollide = false;
     let canStop;
-    let numberOfDashesPassingOver;
-    let componentId;
+    let numberOfDashesPassingOver = 0;
+    let componentId = null;
 
-    const graph = this.createGraph(this.spawnPoint);
-    const node = graph.getNode(this.pointToString(point));
+    const graph = this.createMapGraph(this.spawnPoint);
+    const node = graph.getNode(this.pointToString(pointToAnalyze));
     if (node === undefined) {
       canStop = false;
     } else {
       canStop = true;
-      canReach = true;
     }
 
-    isWall = this.getCollidableAt(point);
-    if (isWall) {
-      const neighbors = [
-        { x: 1, y: 0 },
-        { x: 0, y: 1 },
-        { x: -1, y: 0 },
-        { x: 0, y: -1 },
-      ];
-      for (const neighbor of neighbors) {
-        const neighborPosition = addVectors(neighbor, point);
+    isWall = this.getCollidableAt(pointToAnalyze);
 
+    if (graph.getNodesCount() === 1) {
+      this.forEachNeighbor(this.spawnPoint, (neighbor) => {
+        if (isEqual(neighbor, pointToAnalyze)) {
+          canCollide = true;
+        }
+      });
+      if (!isWall) componentId = 0;
+    } else if (isWall) {
+      this.forEachNeighbor(pointToAnalyze, (neighborPosition, neighbor) => {
         graph.forEachLinkedNode(
           this.pointToString(neighborPosition),
           (node, link) => {
-            if (
-              typeof link.fromId === "number" ||
-              typeof link.toId === "number" ||
-              typeof node.id === "number"
-            )
-              throw new Error("bug");
+            const linkedNode = this.nodeToPoint(node);
 
-            const linkedNode = this.stringToPoint(node.id);
-            const isInboundLink =
-              linkedNode.x === neighborPosition.x &&
-              linkedNode.y === neighborPosition.y;
+            const isInboundLink = isEqual(linkedNode, neighborPosition);
             if (!isInboundLink) return;
 
-            const fromPoint = this.stringToPoint(link.fromId);
-            const toPoint = this.stringToPoint(link.toId);
-            const dashVector = subtractVectors(toPoint, fromPoint);
-            const dashDirection = {
-              x: Math.sign(dashVector.x),
-              y: Math.sign(dashVector.y),
-            };
-            if (
-              dashDirection.x === -neighbor.x &&
-              dashDirection.y === -neighbor.y
-            )
-              canCollide = true;
+            const dash = this.linkToDash(link);
+
+            const dashVector = subtractVectors(dash.to, dash.from);
+            const dashDirection = normalizeVector(dashVector);
+            const isDashInThisDirection = isEqual(
+              dashDirection,
+              scaleVector(neighbor, -1)
+            );
+
+            if (isDashInThisDirection) canCollide = true;
           },
           false
         );
-      }
+      });
     }
 
     graph.forEachLink((link) => {
-      if (typeof link.fromId === "number" || typeof link.toId === "number")
-        throw Error("bug");
+      const dash = this.linkToDash(link);
 
-      const fromPoint = this.stringToPoint(link.fromId);
-      const toPoint = this.stringToPoint(link.toId);
-
-      const dash = subtractVectors(toPoint, fromPoint);
-      const direction = { x: Math.sign(dash.x), y: Math.sign(dash.y) };
-      const dashLength = direction.x + direction.y;
-
-      for (let i = 0; i < dashLength; i++) {
-        const currentPosition = addVectors(fromPoint, {
-          x: direction.x * i,
-          y: direction.y * i,
-        });
-        if (currentPosition.x === point.x && currentPosition.y === point.y)
-          canReach = true;
-      }
+      this.forEachPointInDash(dash, (pointInDash) => {
+        if (isEqual(pointInDash, pointToAnalyze)) {
+          numberOfDashesPassingOver++;
+          componentId = 0;
+        }
+      });
     });
 
     return {
       isWall,
       canStop,
-      canReach,
       canCollide,
-      numberOfDashesPassingOver: 0,
-      componentId: 0,
+      numberOfDashesPassingOver,
+      componentId,
     };
   }
 
-  private createGraph(start: Point): Graph {
+  private createMapGraph(start: Point): Graph {
     if (this.getCollidableAt(start))
       throw Error(
         `cannot create graph from point ${this.pointToString(start)}`
       );
 
-    const myNGraph = createGraph();
+    const graph = createGraph();
+
     const stack = [this.pointToString(start)];
     const visited: Record<string, boolean> = {};
     visited[this.pointToString(start)] = true;
-    myNGraph.addNode(this.pointToString(start));
+
+    graph.addNode(this.pointToString(start));
 
     let currentVertex: string | undefined;
     while ((currentVertex = stack.pop())) {
@@ -250,14 +238,46 @@ export class DashEngine {
       const neighbors = this.getNeighbors(position).map(this.pointToString);
 
       for (const neighbor of neighbors) {
-        myNGraph.addLink(currentVertex, neighbor);
+        graph.addLink(currentVertex, neighbor);
         if (!visited[neighbor]) {
           visited[neighbor] = true;
           stack.push(neighbor);
         }
       }
     }
-    return myNGraph;
+    return graph;
+  }
+
+  private linkToDash(link: Link): Dash {
+    if (typeof link.fromId === "number" || typeof link.toId === "number")
+      throw new Error("bug");
+
+    return {
+      from: this.stringToPoint(link.fromId),
+      to: this.stringToPoint(link.toId),
+    };
+  }
+
+  private forEachPointInDash(
+    dash: Dash,
+    callback: (pointAlongDash: Point) => void
+  ) {
+    const dashVector = subtractVectors(dash.to, dash.from);
+
+    const direction = normalizeVector(dashVector);
+    const dashLength = vectorLength(dashVector);
+
+    for (let i = 0; i <= dashLength; i++) {
+      const currentPosition = addVectors(dash.from, scaleVector(direction, i));
+
+      callback(currentPosition);
+    }
+  }
+
+  private nodeToPoint(node: Node): Point {
+    if (typeof node.id === "number") throw new Error("bug");
+
+    return this.stringToPoint(node.id);
   }
 
   private pointToString(p: Point): string {
@@ -271,60 +291,63 @@ export class DashEngine {
     return parsedPoint;
   }
 
-  getNeighbors(p: Point): Point[] {
+  private getNeighbors(point: Point): Point[] {
     const neighbors: Point[] = [];
 
-    const directions = [
-      { x: -1, y: 0 },
-      { x: 1, y: 0 },
-      { x: 0, y: -1 },
-      { x: 0, y: 1 },
-    ];
+    this.forEachNeighbor(ORIGIN, (_neighbor, direction) => {
+      const neighbor = this.getFirstCollidableInDirection(point, direction);
 
-    for (const direction of directions) {
-      let currentPosition = {
-        x: p.x,
-        y: p.y,
-      };
+      if (neighbor.x !== point.x || neighbor.y !== point.y) {
+        neighbors.push(neighbor);
+      }
+    });
 
-      let positionIsCollidable = this.getCollidableAt(
+    return neighbors;
+  }
+
+  private getFirstCollidableInDirection(point: Point, direction: Point): Point {
+    let currentPosition = {
+      x: point.x,
+      y: point.y,
+    };
+
+    let positionIsCollidable = this.getCollidableAt(
+      addVectors(currentPosition, direction)
+    );
+
+    let pathLength = 1;
+
+    while (!positionIsCollidable) {
+      pathLength++;
+
+      const maxAllowedPathLength = 100;
+      if (pathLength > maxAllowedPathLength)
+        throw Error(
+          `there is a straight dash of over ${maxAllowedPathLength} tiles. Increase max to allow large dashes`
+        );
+
+      currentPosition = addVectors(currentPosition, direction);
+
+      positionIsCollidable = this.getCollidableAt(
         addVectors(currentPosition, direction)
       );
-
-      let pathLength = 1;
-
-      while (!positionIsCollidable) {
-        pathLength++;
-
-        const maxAllowedPathLength = 100;
-        if (pathLength > maxAllowedPathLength)
-          throw Error(
-            `there is a straight dash of over ${maxAllowedPathLength} tiles. Increase max to allow large dashes`
-          );
-
-        const newPosition = {
-          x: currentPosition.x + direction.x,
-          y: currentPosition.y + direction.y,
-        };
-
-        currentPosition = newPosition;
-
-        positionIsCollidable = this.getCollidableAt(
-          addVectors(currentPosition, direction)
-        );
-      }
-
-      if (currentPosition.x !== p.x || currentPosition.y !== p.y) {
-        neighbors.push(currentPosition);
-      }
     }
-    return neighbors;
+
+    return currentPosition;
+  }
+
+  private forEachNeighbor(
+    point: Point,
+    callback: (neighbor: Point, direction: Point) => void
+  ) {
+    for (const direction of DIRECTIONS) {
+      callback(addVectors(point, direction), direction);
+    }
   }
 }
 
 export type AnalysedTile = {
   isWall: boolean;
-  canReach: boolean;
   canCollide: boolean;
   canStop: boolean;
   numberOfDashesPassingOver: number;

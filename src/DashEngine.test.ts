@@ -1,3 +1,4 @@
+import { exp } from "mathjs";
 import { describe, expect, it } from "vitest";
 import { AnalysedTile, DashEngine } from "./DashEngine";
 import { ORIGIN } from "./Helpers";
@@ -145,22 +146,110 @@ describe("DashEngine", () => {
 
     it("should contain a floor tile on the spawn point", () => {
       const spawnPoint = dashEngine.analyzePoint({ x: 0, y: 0 });
-      expect(spawnPoint.isWall).toBe(false);
-      expect(spawnPoint.canCollide).toBe(false);
-      expect(spawnPoint.canStop).toBe(true);
-      expect(spawnPoint.canReach).toBe(true);
-      expect(spawnPoint.componentId).toBe(0);
-      expect(spawnPoint.numberOfDashesPassingOver).toBe(0);
+      expect(spawnPoint).toStrictEqual({
+        canCollide: false,
+        canStop: true,
+        componentId: 0,
+        isWall: false,
+        numberOfDashesPassingOver: 0,
+      });
     });
 
-    it("should contain a wall to the right of spawn", () => {
-      const spawnPoint = dashEngine.analyzePoint({ x: 1, y: 0 });
-      expect(spawnPoint.isWall).toBe(true);
-      expect(spawnPoint.canCollide).toBe(true);
-      expect(spawnPoint.canStop).toBe(false);
-      expect(spawnPoint.canReach).toBe(false);
-      expect(spawnPoint.componentId).toBe(null);
-      expect(spawnPoint.numberOfDashesPassingOver).toBe(0);
+    it("should contain a wall to the right of spawn that is collidable", () => {
+      const wallBesideSpawn = dashEngine.analyzePoint({ x: 1, y: 0 });
+      expect(wallBesideSpawn).toStrictEqual({
+        canCollide: true,
+        canStop: false,
+        componentId: null,
+        isWall: true,
+        numberOfDashesPassingOver: 0,
+      });
+    });
+
+    it("should contain walls that are not collidable", () => {
+      const otherWall = dashEngine.analyzePoint({ x: 3, y: 3 });
+      expect(otherWall).toStrictEqual({
+        canCollide: false,
+        canStop: false,
+        componentId: null,
+        isWall: true,
+        numberOfDashesPassingOver: 0,
+      });
+    });
+  });
+
+  describe("map with single dash", () => {
+    const dashEngine = new DashEngine();
+    dashEngine.fillCollidableAt({ x: 0, y: 0, width: 3, height: 1 }, false);
+
+    it("should match string", () => {
+      const map = dashEngine.getRectAsString({
+        x: -1,
+        y: -1,
+        width: 5,
+        height: 3,
+      });
+
+      expect(map).toMatchInlineSnapshot(`
+        "#####
+        #...#
+        #####"
+      `);
+    });
+
+    it("should contain a stoppable tile to the right", () => {
+      const stoppableTile = dashEngine.analyzePoint({ x: 2, y: 0 });
+      expect(stoppableTile).toStrictEqual({
+        canCollide: false,
+        canStop: true,
+        componentId: 0,
+        isWall: false,
+        numberOfDashesPassingOver: 2,
+      });
+    });
+
+    it("should contain a dashable but unstoppable tile in the middle", () => {
+      const reachableTile = dashEngine.analyzePoint({ x: 1, y: 0 });
+      expect(reachableTile).toStrictEqual({
+        canCollide: false,
+        canStop: false,
+        componentId: 0,
+        isWall: false,
+        numberOfDashesPassingOver: 2,
+      });
+    });
+  });
+
+  describe("map with 2 components", () => {
+    const dashEngine = new DashEngine();
+    dashEngine.fillCollidableAt({ x: 0, y: 0, width: 1, height: 2 }, false);
+    dashEngine.fillCollidableAt({ x: -1, y: 1, width: 3, height: 1 }, false);
+
+    it("should match string", () => {
+      const map = dashEngine.getRectAsString({
+        x: -2,
+        y: -1,
+        width: 5,
+        height: 4,
+      });
+
+      expect(map).toMatchInlineSnapshot(`
+        "#####
+        ##.##
+        #...#
+        #####"
+      `);
+    });
+
+    it("should contain tile that is in another component", () => {
+      const stoppableTile = dashEngine.analyzePoint({ x: 1, y: 1 });
+      expect(stoppableTile).toStrictEqual({
+        canCollide: false,
+        canStop: true,
+        componentId: 1,
+        isWall: false,
+        numberOfDashesPassingOver: 3,
+      });
     });
   });
 
@@ -197,14 +286,12 @@ describe("DashEngine", () => {
     for (const tile of analyzedMap) {
       if (tile.canCollide) expect(tile.isWall).toBe(true);
 
-      if (tile.canReach) {
+      if (tile.numberOfDashesPassingOver >= 1) {
         expect(tile.isWall).toBe(false);
-        expect(tile.numberOfDashesPassingOver).toBeGreaterThanOrEqual(1);
       }
 
       if (tile.canStop) {
         expect(tile.isWall).toBe(false);
-        expect(tile.canReach).toBe(true);
         expect(tile.numberOfDashesPassingOver).toBeGreaterThanOrEqual(2);
         expect(tile.componentId).toBeGreaterThanOrEqual(0);
       } else {
@@ -217,7 +304,6 @@ describe("DashEngine", () => {
     expect(spawnPoint.isWall).toBe(false);
     expect(spawnPoint.canStop).toBe(true);
     expect(spawnPoint.canCollide).toBe(false);
-    expect(spawnPoint.canReach).toBe(true);
 
     const p = dashEngine.analyzePoint({ x: -2, y: -1 });
 
