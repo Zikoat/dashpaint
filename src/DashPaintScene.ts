@@ -33,12 +33,12 @@ export class DashPaintScene extends Phaser.Scene {
   pathLengthColorLayer!: Phaser.Tilemaps.TilemapLayer;
   startButton!: Phaser.GameObjects.Text;
   scoreCounter!: Phaser.GameObjects.Text;
-  
+
   swipe!: SwipeExtended;
   pan!: Pan;
   tap!: Tap;
   pinch!: Pinch;
-  
+
   movementDirection = { x: 0, y: 0 };
   counter = 0;
   tileSize = 8;
@@ -51,13 +51,15 @@ export class DashPaintScene extends Phaser.Scene {
 
   walkableTiles: Point[] = [];
   movementQueue: Point[] = [];
-  
+
   gui = new dat.GUI();
-  
+
   dashEngine = new DashEngine({
     spawnPoint: {
-      x: Math.floor(this.mapSize / 2),
-      y: Math.floor(this.mapSize / 2),
+      x: 1,
+      y: 1,
+      // x: this.mapSize / 2,
+      // y: this.mapSize / 2,
     },
   });
 
@@ -161,7 +163,7 @@ export class DashPaintScene extends Phaser.Scene {
   resetGame() {
     this.dashEngine.fillCollidableAt(
       { x: 0, y: 0, width: this.mapSize, height: this.mapSize },
-      false
+      true
     );
     this.dashEngine.fillRandom(
       {
@@ -170,21 +172,24 @@ export class DashPaintScene extends Phaser.Scene {
         width: this.mapSize - 2,
         height: this.mapSize - 2,
       },
-      0.25
+      0.75
     );
     this.dashEngine.fillCollidableAt(
-      { x: 1, y: 1, width: 2, height: 1 },
+      {
+        x: this.dashEngine.spawnPoint.x,
+        y: this.dashEngine.spawnPoint.y,
+        width: 2,
+        height: 1,
+      },
       false
     );
 
     this.dashEngine.forEachTileInRect(
       { x: 0, y: 0, width: this.mapSize, height: this.mapSize },
       (tile) => {
-        this.layer.putTileAt(tile.collidable ? 0 : 2, tile.x, tile.y);
+        this.layer.putTileAt(tile.collidable ? 2 : 0, tile.x, tile.y);
       }
     );
-
-    this.setPlayerPosition(this.dashEngine.spawnPoint);
 
     this.analyzeMap();
     // this.colorMapSteadyState();
@@ -353,9 +358,7 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   startEdit() {
-    this.setPlayerPosition(this.dashEngine.spawnPoint);
     this.player.alpha = 0.5;
-    this.currentScore = 0;
     this.analyzeMap();
   }
 
@@ -405,6 +408,9 @@ export class DashPaintScene extends Phaser.Scene {
   // }
 
   analyzeMap() {
+    this.setPlayerPosition(this.dashEngine.spawnPoint);
+
+    this.currentScore = 0;
     const graph = this.createGraph(this.getPlayerPosition());
 
     const sccOutput = findScc(graph);
