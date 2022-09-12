@@ -1,7 +1,7 @@
 import { callbackify } from "util";
-import { Dir4 } from "./Dir4";
-import { addVectors, ORIGIN, Point, Rect } from "./Helpers";
+import { addVectors, Dir4, ORIGIN, Point, Rect } from "./Helpers";
 import { MapStorage } from "./MapStorage";
+import seedrandom from "seedrandom";
 
 export interface DashEngineOptions {
   spawnPoint?: Point;
@@ -15,9 +15,11 @@ export class DashEngine {
 
   constructor(options?: DashEngineOptions) {
     const spawnPoint = options?.spawnPoint ?? ORIGIN;
+
     this.spawnPoint = spawnPoint;
     this.playerPosition = spawnPoint;
     this.mapStorage = options?.mapStorage ?? new MapStorage();
+
     this.setCollidableAt(spawnPoint, false);
   }
 
@@ -26,9 +28,27 @@ export class DashEngine {
 
     this.mapStorage.setAt(point, collidableNumber);
   }
+
+  fillCollidableAt(rect: Rect, collidable: boolean) {
+    this.forEachTileInRect(rect, (tile) => {
+      this.setCollidableAt(tile, collidable);
+    });
+  }
+
+  fillRandom(rect: Rect, probability = 0.5, seed?: string) {
+    const random = seedrandom(seed);
+
+    this.forEachTileInRect(rect, (tile) => {
+      const isCollidable = random() > probability;
+
+      this.setCollidableAt(tile, isCollidable);
+    });
+  }
+
   getCollidableAt(point: Point): boolean {
     const collidableNumber = this.mapStorage.getAt(point);
     const collidable = collidableNumber === null || collidableNumber === 2;
+
     return collidable;
   }
 
@@ -60,7 +80,9 @@ export class DashEngine {
     for (let i = 0; i < rect.height; i++) {
       for (let j = 0; j < rect.width; j++) {
         const tilePosition = { x: j + rect.x, y: i + rect.y };
+
         const collidable = this.getCollidableAt(tilePosition);
+
         callback({ ...tilePosition, collidable });
       }
     }
@@ -69,18 +91,19 @@ export class DashEngine {
   getRectAsString(rect: Rect): string {
     let asciiOutput = "";
     let counter = 0;
-    const map = this.forEachTileInRect(
-      { x: -1, y: -1, width: 3, height: 3 },
-      (tile) => {
-        counter++;
 
-        asciiOutput += tile.collidable ? "#" : ".";
+    this.forEachTileInRect(rect, (tile) => {
+      counter++;
 
-        if (tile.x === 1) {
-          asciiOutput += "\n";
-        }
+      asciiOutput += tile.collidable ? "#" : ".";
+
+      if (
+        tile.x === rect.x + rect.width - 1 &&
+        tile.y !== rect.y + rect.height - 1
+      ) {
+        asciiOutput += "\n";
       }
-    );
+    });
     return asciiOutput;
   }
 }

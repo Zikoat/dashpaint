@@ -7,9 +7,9 @@ import { findScc } from "./graphHelpers";
 import createGraph, { Graph as NGraph } from "ngraph.graph";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
-import { Point } from "./Point";
-import { Dir4 } from "./Dir4";
 import { DashEngine } from "./DashEngine";
+import { Dir4, Point } from "./Helpers";
+import { Dir } from "fs";
 
 type SwipeExtended = Swipe & {
   up: boolean;
@@ -40,12 +40,11 @@ export class DashPaintScene extends Phaser.Scene {
   pan!: Pan;
   tap!: Tap;
   startButton!: Phaser.GameObjects.Text;
-  spawnPoint = { x: 1, y: 1 };
   movementQueue: Point[] = [];
   maxScore = 0;
   currentScore = 0;
   scoreCounter!: Phaser.GameObjects.Text;
-  dashEngine = new DashEngine();
+  dashEngine = new DashEngine({ spawnPoint: { x: 2, y: 1 } });
 
   preload() {
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
@@ -132,21 +131,32 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   resetGame() {
-    this.layer.fill(2, 0, 0, this.mapSize, this.mapSize);
-    this.layer.fill(1, 1, 1, this.mapSize - 2, this.mapSize - 2);
-    this.layer.weightedRandomize(
-      [
-        { index: 0, weight: 4 }, // walkable
-        { index: 2, weight: 1 }, // not walkable
-      ],
-      1,
-      1,
-      this.mapSize - 2,
-      this.mapSize - 2
+    this.dashEngine.fillCollidableAt(
+      { x: 0, y: 0, width: this.mapSize, height: this.mapSize },
+      false
     );
-    this.layer.fill(0, 1, 1, 2, 1);
+    this.dashEngine.fillRandom(
+      {
+        x: 1,
+        y: 1,
+        width: this.mapSize - 2,
+        height: this.mapSize - 2,
+      },
+      0.25
+    );
+    this.dashEngine.fillCollidableAt(
+      { x: 1, y: 1, width: 2, height: 1 },
+      false
+    );
 
-    this.setPlayerPosition(this.spawnPoint);
+    this.dashEngine.forEachTileInRect(
+      { x: 0, y: 0, width: this.mapSize, height: this.mapSize },
+      (tile) => {
+        this.layer.putTileAt(tile.collidable ? 0 : 2, tile.x, tile.y);
+      }
+    );
+
+    this.setPlayerPosition(this.dashEngine.spawnPoint);
 
     this.analyzeMap();
     // this.colorMapSteadyState();
@@ -315,7 +325,7 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   startEdit() {
-    this.setPlayerPosition(this.spawnPoint);
+    this.setPlayerPosition(this.dashEngine.spawnPoint);
     this.player.alpha = 0.5;
     this.currentScore = 0;
     this.analyzeMap();
