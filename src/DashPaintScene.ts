@@ -24,35 +24,44 @@ type SwipeExtended = Swipe & {
 };
 
 export class DashPaintScene extends Phaser.Scene {
-  movementDirection = { x: 0, y: 0 };
   player!: Phaser.GameObjects.Image;
   layer!: Phaser.Tilemaps.TilemapLayer;
   cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
-  passBotAgents!: { x: number; y: number; velX: number; velY: number }[];
-
-  counter = 0;
-  tileSize = 8;
-  gui = new dat.GUI();
   map!: Phaser.Tilemaps.Tilemap;
   tileset!: Phaser.Tilemaps.Tileset;
   connectedComponentsLayer!: Phaser.Tilemaps.TilemapLayer;
   pathLengthColorLayer!: Phaser.Tilemaps.TilemapLayer;
-  walkableTiles: Point[] = [];
-  maxPathLength = 0;
-  minPathLength = Infinity;
-  mapSize = 20;
+  startButton!: Phaser.GameObjects.Text;
+  scoreCounter!: Phaser.GameObjects.Text;
+
   swipe!: SwipeExtended;
   pan!: Pan;
   tap!: Tap;
-  startButton!: Phaser.GameObjects.Text;
-  spawnPoint = { x: 1, y: 1 };
-  movementQueue: Point[] = [];
+  pinch!: Pinch;
+
+  movementDirection = { x: 0, y: 0 };
+  counter = 0;
+  tileSize = 8;
+  maxPathLength = 0;
+  minPathLength = Infinity;
+  mapSize = 20;
   maxScore = 0;
   currentScore = 0;
-  scoreCounter!: Phaser.GameObjects.Text;
-  dashEngine = new DashEngine();
-  pinch!: Pinch;
   zoom = 3;
+
+  walkableTiles: Point[] = [];
+  movementQueue: Point[] = [];
+
+  gui = new dat.GUI();
+
+  dashEngine = new DashEngine({
+    spawnPoint: {
+      x: 1,
+      y: 1,
+      // x: this.mapSize / 2,
+      // y: this.mapSize / 2,
+    },
+  });
 
   preload() {
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
@@ -152,21 +161,35 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   resetGame() {
-    this.layer.fill(2, 0, 0, this.mapSize, this.mapSize);
-    this.layer.fill(1, 1, 1, this.mapSize - 2, this.mapSize - 2);
-    this.layer.weightedRandomize(
-      [
-        { index: 0, weight: 4 }, // walkable
-        { index: 2, weight: 1 }, // not walkable
-      ],
-      1,
-      1,
-      this.mapSize - 2,
-      this.mapSize - 2
+    this.dashEngine.fillCollidableAt(
+      { x: 0, y: 0, width: this.mapSize, height: this.mapSize },
+      true
     );
-    this.layer.fill(0, 1, 1, 2, 1);
+    this.dashEngine.fillRandom(
+      {
+        x: 1,
+        y: 1,
+        width: this.mapSize - 2,
+        height: this.mapSize - 2,
+      },
+      0.75
+    );
+    this.dashEngine.fillCollidableAt(
+      {
+        x: this.dashEngine.spawnPoint.x,
+        y: this.dashEngine.spawnPoint.y,
+        width: 2,
+        height: 1,
+      },
+      false
+    );
 
-    this.setPlayerPosition(this.spawnPoint);
+    this.dashEngine.forEachTileInRect(
+      { x: 0, y: 0, width: this.mapSize, height: this.mapSize },
+      (tile) => {
+        this.layer.putTileAt(tile.collidable ? 2 : 0, tile.x, tile.y);
+      }
+    );
 
     this.analyzeMap();
     // this.colorMapSteadyState();
@@ -335,9 +358,7 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   startEdit() {
-    this.setPlayerPosition(this.spawnPoint);
     this.player.alpha = 0.5;
-    this.currentScore = 0;
     this.analyzeMap();
   }
 
@@ -387,6 +408,9 @@ export class DashPaintScene extends Phaser.Scene {
   // }
 
   analyzeMap() {
+    this.setPlayerPosition(this.dashEngine.spawnPoint);
+
+    this.currentScore = 0;
     const graph = this.createGraph(this.getPlayerPosition());
 
     const sccOutput = findScc(graph);

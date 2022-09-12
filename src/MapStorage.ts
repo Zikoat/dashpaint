@@ -1,14 +1,12 @@
 import { Point } from "./Helpers";
 
-
 export class MapStorage {
   private data: Record<number, Record<number, number>> = {};
 
-  constructor() { }
+  constructor() {}
 
   setAt(point: Point, numberToSave: number): void {
-    if (!this.data[point.x])
-      this.data[point.x] = {};
+    if (!this.data[point.x]) this.data[point.x] = {};
 
     this.data[point.x]![point.y] = numberToSave;
   }
