@@ -45,7 +45,10 @@ export class DashPaintScene extends Phaser.Scene {
   pan!: Pan;
   tap!: Tap;
   startButton!: Phaser.GameObjects.Text;
-  spawnPoint = { x: 1, y: 1 };
+  spawnPoint = {
+    x: Math.floor(this.mapSize / 2),
+    y: Math.floor(this.mapSize / 2),
+  };
   movementQueue: Point[] = [];
   maxScore = 0;
   currentScore = 0;
