@@ -1,11 +1,7 @@
 import * as Phaser from "phaser";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
-import {
-  Pinch,
-  Swipe,
-  Tap,
-} from "phaser3-rex-plugins/plugins/gestures.js";
+import { Pinch, Swipe, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
@@ -411,9 +407,18 @@ export class DashPaintScene extends Phaser.Scene {
 
       assert(tile);
 
+      const ccTile = this.connectedComponentsLayer.getTileAt(
+        analysedTile.x,
+        analysedTile.y,
+        true
+      );
+      assert(ccTile);
+
       if (analysedTile.isWall && analysedTile.canCollide) {
         tile.index = 2;
-      } else {
+      } else if (analysedTile.isWall) {
+        ccTile.index = 2;
+        ccTile.tint = 0xffffff;
         tile.index = 0;
       }
 
@@ -426,12 +431,6 @@ export class DashPaintScene extends Phaser.Scene {
         const color = colors[analysedTile.componentId];
         assert(color);
 
-        const ccTile = this.connectedComponentsLayer.getTileAt(
-          analysedTile.x,
-          analysedTile.y,
-          true
-        );
-        assert(ccTile);
         ccTile.index = 2;
         ccTile.tint = Number(color.replace("#", "0x"));
       }
