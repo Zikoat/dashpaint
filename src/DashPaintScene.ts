@@ -411,13 +411,10 @@ export class DashPaintScene extends Phaser.Scene {
 
       assert(tile);
 
-      if (analysedTile.isWall) {
+      if (analysedTile.isWall && analysedTile.canCollide) {
         tile.index = 2;
-        if (analysedTile.canCollide) tile.tint = 0xffd0c2;
-        else tile.tint = 0xffffff;
       } else {
         tile.index = 0;
-        tile.tint = 0xffffff;
       }
 
       if (analysedTile.numberOfDashesPassingOver >= 1) {
