@@ -1,20 +1,15 @@
-import { inspect } from "util"; // or directly
 import * as Phaser from "phaser";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
-import { max, nthRootDependencies } from "mathjs";
 import {
-  Pan,
   Pinch,
   Swipe,
   Tap,
 } from "phaser3-rex-plugins/plugins/gestures.js";
-import { findScc } from "./graphHelpers";
-import createGraph, { Graph as NGraph, Node, NodeId } from "ngraph.graph";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
-import { Dir4, floorVector, Point } from "./Helpers";
+import { Dir4, Point } from "./Helpers";
 
 type SwipeExtended = Swipe & {
   up: boolean;
@@ -26,41 +21,36 @@ type SwipeExtended = Swipe & {
 export class DashPaintScene extends Phaser.Scene {
   player!: Phaser.GameObjects.Image;
   layer!: Phaser.Tilemaps.TilemapLayer;
-  cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   map!: Phaser.Tilemaps.Tilemap;
   tileset!: Phaser.Tilemaps.Tileset;
   connectedComponentsLayer!: Phaser.Tilemaps.TilemapLayer;
   pathLengthColorLayer!: Phaser.Tilemaps.TilemapLayer;
-  startButton!: Phaser.GameObjects.Text;
   scoreCounter!: Phaser.GameObjects.Text;
 
   swipe!: SwipeExtended;
-  pan!: Pan;
   tap!: Tap;
   pinch!: Pinch;
 
   movementDirection = { x: 0, y: 0 };
-  counter = 0;
   tileSize = 8;
-  maxPathLength = 0;
-  minPathLength = Infinity;
-  mapSize = 10;
+  // maxPathLength = 0;
+  // minPathLength = Infinity;
+  mapSize = 100;
   maxScore = 0;
   currentScore = 0;
   zoom = 3;
   seed: string | undefined = "1";
 
-  walkableTiles: Point[] = [];
   movementQueue: Point[] = [];
 
   gui = new dat.GUI();
 
   dashEngine = new DashEngine({
     spawnPoint: {
-      x: 1,
-      y: 1,
-      // x: this.mapSize / 2,
-      // y: this.mapSize / 2,
+      // x: 1,
+      // y: 1,
+      x: this.mapSize / 2,
+      y: this.mapSize / 2,
     },
   });
 
@@ -107,8 +97,6 @@ export class DashPaintScene extends Phaser.Scene {
     this.connectedComponentsLayer.depth = -1;
     this.setDefaultLayer();
 
-    this.cursors = this.input.keyboard.createCursorKeys();
-
     this.gui
       .add(this.connectedComponentsLayer, "alpha", 0, 1)
       .name("Show reachability");
@@ -131,8 +119,6 @@ export class DashPaintScene extends Phaser.Scene {
     });
 
     this.swipe = new Swipe(this, { dir: "4dir" }) as SwipeExtended;
-
-    this.pan = new Pan(this);
 
     this.tap = new Tap(this, {
       tapInterval: 0,
@@ -175,7 +161,7 @@ export class DashPaintScene extends Phaser.Scene {
         width: this.mapSize - 2,
         height: this.mapSize - 2,
       },
-      0.75,
+      0.65,
       this.seed
     );
     this.dashEngine.fillCollidableAt(
@@ -240,28 +226,27 @@ export class DashPaintScene extends Phaser.Scene {
     }
   }
 
-  colorMapPathLengthMinMax() {
-    const colorScale = chroma.scale(["green", "yellow", "red"]);
-    colorScale.domain([this.minPathLength, this.maxPathLength]);
+  // colorMapPathLengthMinMax() {
+  //   const colorScale = chroma.scale(["green", "yellow", "red"]);
+  //   colorScale.domain([this.minPathLength, this.maxPathLength]);
 
-    for (const point of this.walkableTiles) {
-      const tile = this.pathLengthColorLayer.getTileAt(point.x, point.y, true);
-      tile.index = 2;
-      const maxPathLength = tile.properties.maxPathLength;
-      if (typeof maxPathLength !== "number")
-        throw new Error("maxPathLength is undefined on a walkable tile");
+  //   for (const point of this.walkableTiles) {
+  //     const tile = this.pathLengthColorLayer.getTileAt(point.x, point.y, true);
+  //     tile.index = 2;
+  //     const maxPathLength = tile.properties.maxPathLength;
+  //     if (typeof maxPathLength !== "number")
+  //       throw new Error("maxPathLength is undefined on a walkable tile");
 
-      tile.tint = colorScale(maxPathLength).num();
-    }
-    this.pathLengthColorLayer.alpha = 0;
-    this.pathLengthColorLayer.depth = -2;
-    this.gui
-      .add(this.pathLengthColorLayer, "alpha", 0, 1)
-      .name("Show dash length");
-  }
+  //     tile.tint = colorScale(maxPathLength).num();
+  //   }
+  //   this.pathLengthColorLayer.alpha = 0;
+  //   this.pathLengthColorLayer.depth = -2;
+  //   this.gui
+  //     .add(this.pathLengthColorLayer, "alpha", 0, 1)
+  //     .name("Show dash length");
+  // }
 
   update() {
-    this.validateMovement();
     if (!htmlPhaserFunctions.isEditing) {
       if (this.swipe.isSwiped) {
         console.log("swiped");
@@ -279,7 +264,7 @@ export class DashPaintScene extends Phaser.Scene {
           assert(nextMovement, "Tried dequeueing while queue is empty");
 
           const nextPosition = this.getPlayerPosition().add(nextMovement);
-          if (this.isWalkable(nextPosition)) {
+          if (!this.dashEngine.getWallAt(nextPosition)) {
             validMovement = true;
             this.movementDirection = nextMovement;
           }
@@ -289,7 +274,7 @@ export class DashPaintScene extends Phaser.Scene {
         const nextPosition = this.getPlayerPosition().add(
           this.movementDirection
         );
-        if (this.isWalkable(nextPosition)) {
+        if (!this.dashEngine.getWallAt(nextPosition)) {
           this.setPlayerPosition(nextPosition);
         } else {
           this.movementDirection = { x: 0, y: 0 };
@@ -308,18 +293,6 @@ export class DashPaintScene extends Phaser.Scene {
     this.scoreCounter.text = `dots: ${this.maxScore - this.currentScore}`;
   }
 
-  isWalkable(p: Point) {
-    const tile = this.layer.getTileAt(
-      p.x,
-      p.y,
-      true
-    ) as Phaser.Tilemaps.Tile | null;
-
-    if (!tile) return true;
-
-    return tile.index !== 2;
-  }
-
   enqueueMovement(direction: Dir4) {
     const nextMovement = new Phaser.Math.Vector2(0, 0);
 
@@ -329,28 +302,6 @@ export class DashPaintScene extends Phaser.Scene {
     else if (direction === "down") nextMovement.y = 1;
 
     this.movementQueue.push(nextMovement);
-  }
-
-  simplifyMovement = (p: Point) => `${p.x},${p.y}`;
-
-  validateMovement() {
-    assert(
-      this.isValidMovementVector(this.movementDirection),
-      "movement direction is invalid"
-    );
-    for (const movement of this.movementQueue) {
-      assert(
-        this.isValidMovementVector(movement),
-        "an entry in movementQueue is invalid"
-      );
-    }
-  }
-
-  isValidMovementVector(p: Point) {
-    const length = Math.abs(p.x) + Math.abs(p.y);
-    if (!(length === 1 || length === 0)) return false;
-    if (p.x !== 0 && p.y !== 0) return false;
-    return true;
   }
 
   setPlayerPosition(point: Point) {
@@ -489,223 +440,11 @@ export class DashPaintScene extends Phaser.Scene {
       }
     });
 
-    // graph.forEachLink((link) => {
-    //   assert(typeof link.fromId === "string");
-    //   assert(typeof link.toId === "string");
-    //   const fromPoint = this.stringToPoint(link.fromId);
-    //   const toPoint = this.stringToPoint(link.toId);
-
-    //   const dash = toPoint.subtract(fromPoint);
-    //   const movementDirection = new Phaser.Math.Vector2(dash).normalize();
-    //   assert(
-    //     this.isValidMovementVector(movementDirection),
-    //     `${this.simplifyMovement(
-    //       movementDirection
-    //     )} is not a valid movement vector`
-    //   );
-    //   for (let i = 0; i < dash.length(); i++) {
-    //     const currentPosition = new Phaser.Math.Vector2(movementDirection)
-    //       .scale(i)
-    //       .add(fromPoint);
-    //     const tile = this.layer.getTileAt(
-    //       currentPosition.x,
-    //       currentPosition.y,
-    //       true
-    //     ) as Phaser.Tilemaps.Tile | null;
-    //     if (tile && tile.index !== 17) {
-    //       tile.index = 17;
-    //       this.maxScore++;
-    //     }
-    //   }
-    // });
     console.timeEnd("analyseMap");
-  }
-
-  nodeToPoint(node: Node | NodeId): Point {
-    let nodeId;
-
-    if (typeof node !== "object") {
-      nodeId = node;
-    } else nodeId = node.id;
-
-    if (typeof nodeId === "number") throw Error("bug");
-
-    return this.stringToPoint(nodeId);
   }
 
   setDefaultLayer() {
     this.map.currentLayerIndex = this.map.getLayerIndexByName("ShitLayer1");
-  }
-
-  toNumberAdjacencyList({
-    adjacencyList,
-  }: {
-    adjacencyList: { [x: string]: any };
-  }) {
-    const sources = Object.keys(adjacencyList);
-    const output: number[][] = [];
-    for (const [index, source] of sources.entries()) {
-      const destinations: Set<string> = adjacencyList[source];
-      const mappedDestinations = [...destinations].map((d) =>
-        sources.indexOf(d)
-      );
-      output[index] = mappedDestinations;
-    }
-    return { numberAdjacencyList: output, values: sources };
-  }
-
-  pointToString(p: Point): string {
-    return JSON.stringify({ x: p.x, y: p.y });
-  }
-
-  stringToPoint(s: string): Phaser.Math.Vector2 {
-    return new Phaser.Math.Vector2(JSON.parse(s));
-  }
-
-  getNeighbors(p: Point): Point[] {
-    const neighbors: Point[] = [];
-
-    const directions = [
-      { x: -1, y: 0 },
-      { x: 1, y: 0 },
-      { x: 0, y: -1 },
-      { x: 0, y: 1 },
-    ];
-
-    this.setPathLength(p.x, p.y, 0);
-
-    for (const direction of directions) {
-      let currentPosition = {
-        x: p.x,
-        y: p.y,
-      };
-
-      let tile = this.layer.getTileAt(
-        currentPosition.x + direction.x,
-        currentPosition.y + direction.y,
-        true
-      );
-
-      let pathLength = 1;
-      // this.setPathLength(
-      //   currentPosition.x + direction.x,
-      //   currentPosition.y + direction.y,
-      //   pathLength
-      // );
-
-      if (tile === null || tile.index === -1) {
-        console.error(
-          tile,
-          "is not defined, but was queried currentPosition:",
-          currentPosition,
-          direction
-        );
-        throw new Error("see error above");
-      }
-
-      while (tile.index !== 2) {
-        pathLength++;
-
-        const maxAllowedPathLength = 100;
-        if (pathLength > maxAllowedPathLength)
-          throw Error(
-            `there is a straight dash of over ${maxAllowedPathLength} tiles. Increase max to allow large dashes`
-          );
-
-        const newPosition = {
-          x: currentPosition.x + direction.x,
-          y: currentPosition.y + direction.y,
-        };
-
-        this.setPathLength(newPosition.x, newPosition.y, pathLength);
-
-        currentPosition = newPosition;
-
-        tile = this.layer.getTileAt(
-          currentPosition.x + direction.x,
-          currentPosition.y + direction.y,
-          true
-        );
-      }
-
-      if (currentPosition.x !== p.x || currentPosition.y !== p.y) {
-        neighbors.push(currentPosition);
-      }
-    }
-    return neighbors;
-  }
-
-  setPathLength(tilePosX: number, tilePosY: number, pathLength: number) {
-    this.walkableTiles.push({ x: tilePosX, y: tilePosY });
-
-    const tile = this.pathLengthColorLayer.getTileAt(tilePosX, tilePosY, true);
-
-    tile.properties.maxPathLength =
-      tile.properties.maxPathLength === undefined
-        ? pathLength
-        : max(tile.properties.maxPathLength, pathLength);
-    tile.properties.minPathLength =
-      tile.properties.minPathLength === undefined
-        ? pathLength
-        : max(tile.properties.minPathLength, pathLength);
-
-    this.maxPathLength = Math.max(
-      this.maxPathLength,
-      tile.properties.maxPathLength
-    );
-    this.minPathLength = Math.min(
-      this.minPathLength,
-      tile.properties.minPathLength
-    );
-  }
-
-  createGraph(start: Point): NGraph {
-    const myNGraph = createGraph();
-    const stack = [this.pointToString(start)];
-    const visited: Record<string, boolean> = {};
-    visited[this.pointToString(start)] = true;
-
-    let currentVertex: string | undefined;
-    while ((currentVertex = stack.pop())) {
-      const position = this.stringToPoint(currentVertex);
-      const tile = this.layer.getTileAt(
-        position.x,
-        position.y,
-        true
-      ) as Phaser.Tilemaps.Tile | null;
-
-      const neighbors = this.getNeighbors(
-        this.stringToPoint(currentVertex)
-      ).map(this.pointToString);
-
-      for (const neighbor of neighbors) {
-        myNGraph.addLink(currentVertex, neighbor);
-        if (!visited[neighbor]) {
-          visited[neighbor] = true;
-          stack.push(neighbor);
-        }
-      }
-    }
-    return myNGraph;
-  }
-
-  simplifyAdjacencyList(adjacencyList: { [x: string]: any }): any {
-    function toSimpleString(p: Point): string {
-      return "" + p.x + "," + p.y;
-    }
-    const output: Record<string, string[]> = {};
-    for (const sourcePoint in adjacencyList) {
-      if (Object.prototype.hasOwnProperty.call(adjacencyList, sourcePoint)) {
-        const destinationPoints: string[] = adjacencyList[sourcePoint];
-        const sourcePointPoint = this.stringToPoint(sourcePoint);
-        const sourcePointSimpleString = toSimpleString(sourcePointPoint);
-        const destinationPointsSimpleString = destinationPoints.map((p) =>
-          toSimpleString(this.stringToPoint(p))
-        );
-        output[sourcePointSimpleString] = destinationPointsSimpleString;
-      }
-    }
-    return output;
   }
 
   updateAngle() {
