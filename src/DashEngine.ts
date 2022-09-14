@@ -13,8 +13,9 @@ import {
 } from "./Helpers";
 import { MapStorage } from "./MapStorage";
 import seedrandom from "seedrandom";
-import createGraph, { Graph, Link, Node } from "ngraph.graph";
+import createGraph, { Graph, Link, Node, NodeId } from "ngraph.graph";
 import assert from "assert";
+import { adjacencyListToGraph, findScc } from "./graphHelpers";
 
 export interface DashEngineOptions {
   spawnPoint?: Point;
@@ -133,7 +134,9 @@ export class DashEngine {
       canStop: false,
       numberOfDashesPassingOver: 0,
       componentId: null,
+      components: createGraph(),
     };
+
     return [
       analyzedTile,
       analyzedTile,
@@ -152,7 +155,7 @@ export class DashEngine {
     let canCollide = false;
     let canStop;
     let numberOfDashesPassingOver = 0;
-    let componentId = null;
+    let componentId: number | null = null;
 
     const graph = this.createMapGraph(this.spawnPoint);
     const node = graph.getNode(this.pointToString(pointToAnalyze));
@@ -165,12 +168,14 @@ export class DashEngine {
     isWall = this.getCollidableAt(pointToAnalyze);
 
     if (graph.getNodesCount() === 1) {
+      
       this.forEachNeighbor(this.spawnPoint, (neighbor) => {
         if (isEqual(neighbor, pointToAnalyze)) {
           canCollide = true;
         }
       });
-      if (!isWall) componentId = 0;
+      if (isEqual(pointToAnalyze, this.spawnPoint)) componentId = 0;
+
     } else if (isWall) {
       this.forEachNeighbor(pointToAnalyze, (neighborPosition, neighbor) => {
         graph.forEachLinkedNode(
@@ -203,9 +208,21 @@ export class DashEngine {
       this.forEachPointInDash(dash, (pointInDash) => {
         if (isEqual(pointInDash, pointToAnalyze)) {
           numberOfDashesPassingOver++;
-          componentId = 0;
         }
       });
+    });
+
+    const sccOutput = findScc(graph);
+
+    const components = sccOutput;
+
+    components.forEachNode((node) => {
+      if (node.data.includes(this.pointToString(pointToAnalyze))) {
+        if (componentId !== null) throw Error("bug");
+        if (typeof node.id === "string") throw Error("bug");
+
+        componentId = node.id;
+      }
     });
 
     return {
@@ -214,6 +231,7 @@ export class DashEngine {
       canCollide,
       numberOfDashesPassingOver,
       componentId,
+      components,
     };
   }
 
@@ -274,10 +292,16 @@ export class DashEngine {
     }
   }
 
-  private nodeToPoint(node: Node): Point {
-    if (typeof node.id === "number") throw new Error("bug");
+  private nodeToPoint(node: Node | NodeId): Point {
+    let nodeId;
 
-    return this.stringToPoint(node.id);
+    if (typeof node !== "object") {
+      nodeId = node;
+    } else nodeId = node.id;
+
+    if (typeof nodeId === "number") throw Error("bug");
+
+    return this.stringToPoint(nodeId);
   }
 
   private pointToString(p: Point): string {
@@ -286,7 +310,7 @@ export class DashEngine {
 
   private stringToPoint(s: string): Point {
     const parsedPoint = JSON.parse(s);
-    
+
     assert(typeof parsedPoint.x === "number");
     assert(typeof parsedPoint.y === "number");
 
@@ -354,4 +378,5 @@ export type AnalysedTile = {
   canStop: boolean;
   numberOfDashesPassingOver: number;
   componentId: number | null;
+  components: Graph<NodeId[]>;
 };

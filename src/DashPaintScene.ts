@@ -10,7 +10,7 @@ import {
   Tap,
 } from "phaser3-rex-plugins/plugins/gestures.js";
 import { findScc } from "./graphHelpers";
-import createGraph, { Graph as NGraph } from "ngraph.graph";
+import createGraph, { Graph as NGraph, Node, NodeId } from "ngraph.graph";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
@@ -408,23 +408,28 @@ export class DashPaintScene extends Phaser.Scene {
   // }
 
   analyzeMap() {
+    
     this.setPlayerPosition(this.dashEngine.spawnPoint);
 
     this.currentScore = 0;
+
+    
+
     const graph = this.createGraph(this.getPlayerPosition());
 
     const sccOutput = findScc(graph);
-    const tileConnectedComponents = sccOutput.components.map((component) =>
-      component.map((sourceNumber) => {
-        if (typeof sourceNumber === "number")
-          throw new Error("A node id is a number, but it should be a string");
-        return this.stringToPoint(sourceNumber);
-      })
-    );
+
+    // const tileConnectedComponents = sccOutput.map((component) =>
+    //   component.map((sourceNumber) => {
+    //     if (typeof sourceNumber === "number")
+    //       throw new Error("A node id is a number, but it should be a string");
+    //     return this.stringToPoint(sourceNumber);
+    //   })
+    // );
 
     const colors = chroma
       .scale(["yellow", "008ae5"])
-      .colors(tileConnectedComponents.length);
+      .colors(sccOutput.getNodesCount());
 
     this.connectedComponentsLayer.replaceByIndex(
       2,
@@ -434,24 +439,25 @@ export class DashPaintScene extends Phaser.Scene {
       this.mapSize,
       this.mapSize
     );
-    for (const [
-      index,
-      tileConnectedComponent,
-    ] of tileConnectedComponents.entries()) {
-      const color = colors[index];
-      if (typeof color !== "string")
-        throw new Error(`could not get color of index ${index}`);
-      for (const tileInComponent of tileConnectedComponent) {
-        const tile = this.connectedComponentsLayer.getTileAt(
-          tileInComponent.x,
-          tileInComponent.y,
-          true
-        );
 
-        tile.index = 2;
-        tile.tint = Number(color.replace("#", "0x"));
-      }
-    }
+    sccOutput.forEachNode((componentNode) => {
+      if (typeof componentNode.id === "string") throw Error("bug");
+      const color = colors[componentNode.id];
+      if (color === undefined) throw Error("bug");
+
+      componentNode.data
+        .map((nodeId) => this.nodeToPoint(nodeId))
+        .forEach((tileInComponent) => {
+          const tile = this.connectedComponentsLayer.getTileAt(
+            tileInComponent.x,
+            tileInComponent.y,
+            true
+          );
+
+          tile.index = 2;
+          tile.tint = Number(color.replace("#", "0x"));
+        });
+    });
 
     this.layer.replaceByIndex(17, 0, 0, 0, this.mapSize, this.mapSize);
 
@@ -485,6 +491,18 @@ export class DashPaintScene extends Phaser.Scene {
         }
       }
     });
+  }
+
+  nodeToPoint(node: Node | NodeId): Point {
+    let nodeId;
+
+    if (typeof node !== "object") {
+      nodeId = node;
+    } else nodeId = node.id;
+
+    if (typeof nodeId === "number") throw Error("bug");
+
+    return this.stringToPoint(nodeId);
   }
 
   setDefaultLayer() {

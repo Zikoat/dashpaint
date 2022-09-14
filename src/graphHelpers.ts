@@ -1,7 +1,7 @@
 import createGraph, { Graph, NodeId } from "ngraph.graph";
 import scc from "strongly-connected-components";
 
-export function toAdjacencyList(graph: Graph) {
+function toAdjacencyList(graph: Graph) {
   const nodes: NodeId[] = [];
   const adjacencyList: number[][] = [];
 
@@ -27,23 +27,27 @@ export function toAdjacencyList(graph: Graph) {
   return { nodes, adjacencyList };
 }
 
-export function findScc(graph: Graph): {
-  components: NodeId[][];
-  componentAdjacencyList: number[][];
-} {
+export function findScc(graph: Graph) {
   const adjacencyListGraph = toAdjacencyList(graph);
   const sccOutput: SccOutput = scc(adjacencyListGraph.adjacencyList);
 
   const components = sccOutput.components.map((component) =>
     component.map((nodeIndex) => {
-      const node = adjacencyListGraph.nodes[nodeIndex];
-      if (node === undefined)
+      const nodeId = adjacencyListGraph.nodes[nodeIndex];
+      if (nodeId === undefined)
         throw new Error(`couldnt find node index ${nodeIndex}`);
-      return node;
+
+      return nodeId;
     })
   );
 
-  return { componentAdjacencyList: sccOutput.adjacencyList, components };
+  const sccGraph = adjacencyListToGraph(
+    sccOutput.adjacencyList,
+    undefined,
+    components
+  );
+
+  return sccGraph;
 }
 
 export interface SccOutput {
@@ -51,19 +55,20 @@ export interface SccOutput {
   adjacencyList: number[][];
 }
 
-export function toGraph(adjacencyList: number[][], nodes: NodeId[]): Graph {
-  const g = createGraph();
+export function adjacencyListToGraph<T>(
+  adjacencyList: number[][],
+  nodeIds?: NodeId[],
+  data?: T[]
+): Graph<T> {
+  const g = createGraph<T>();
+
   for (const [fromNode, toNodes] of adjacencyList.entries()) {
-    const fromNodeId = nodes[fromNode];
-    if (fromNodeId === undefined) {
-      throw new Error(`Could not find node at index ${fromNode}`);
-    }
+    const fromNodeId = nodeIds?.[fromNode] ?? fromNode;
+
+    g.addNode(fromNodeId, data?.[fromNode]);
 
     for (const toNode of toNodes) {
-      const toNodeId = nodes[toNode];
-      if (toNodeId === undefined) {
-        throw new Error(`Could not find node at index ${toNode}`);
-      }
+      const toNodeId = nodeIds?.[toNode] ?? toNode;
 
       g.addLink(fromNodeId, toNodeId);
     }
