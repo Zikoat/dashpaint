@@ -1,5 +1,4 @@
-import { faRectangleXmark } from "@fortawesome/free-solid-svg-icons";
-import { Graph, Node, NodeId } from "ngraph.graph";
+import { Graph, Node } from "ngraph.graph";
 
 export const ORIGIN = { x: 0, y: 0 };
 Object.freeze(ORIGIN);
@@ -56,6 +55,10 @@ export function isVector(vector: unknown): vector is Point {
     typeof (vector as Point).x === "number" &&
     typeof (vector as Point).y === "number"
   );
+}
+
+export function floorVector(vector: Point): Point {
+  return { x: Math.floor(vector.x), y: Math.floor(vector.y) };
 }
 
 export type Point = { x: number; y: number };

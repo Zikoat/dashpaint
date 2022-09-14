@@ -41,10 +41,10 @@ export class DashEngine {
     this.playerPosition = spawnPoint;
     this.mapStorage = options?.mapStorage ?? new MapStorage();
 
-    this.setCollidableAt(spawnPoint, false);
+    this.setWallAt(spawnPoint, false);
   }
 
-  setCollidableAt(point: Point, isCollidable: boolean) {
+  setWallAt(point: Point, isCollidable: boolean) {
     const collidableNumber = isCollidable ? 2 : 1;
 
     this.mapStorage.setAt(point, collidableNumber);
@@ -52,7 +52,7 @@ export class DashEngine {
 
   fillCollidableAt(rect: Rect, collidable: boolean) {
     this.forEachTileInRect(rect, (tile) => {
-      this.setCollidableAt(tile, collidable);
+      this.setWallAt(tile, collidable);
     });
   }
 
@@ -62,11 +62,11 @@ export class DashEngine {
     this.forEachTileInRect(rect, (tile) => {
       const isCollidable = random() > probability;
 
-      this.setCollidableAt(tile, isCollidable);
+      this.setWallAt(tile, isCollidable);
     });
   }
 
-  getCollidableAt(point: Point): boolean {
+  getWallAt(point: Point): boolean {
     const collidableNumber = this.mapStorage.getAt(point);
     const collidable = collidableNumber === null || collidableNumber === 2;
 
@@ -77,7 +77,7 @@ export class DashEngine {
     const movement = this.directionToMovement(direction);
     const currentPosition = this.playerPosition;
     const nextPosition = addVectors(movement, currentPosition);
-    const nextPositionCollidable = this.getCollidableAt(nextPosition);
+    const nextPositionCollidable = this.getWallAt(nextPosition);
 
     if (!nextPositionCollidable) this.playerPosition = nextPosition;
     return this.playerPosition;
@@ -102,7 +102,7 @@ export class DashEngine {
       for (let j = 0; j < rect.width; j++) {
         const tilePosition = { x: j + rect.x, y: i + rect.y };
 
-        const collidable = this.getCollidableAt(tilePosition);
+        const collidable = this.getWallAt(tilePosition);
 
         callback({ ...tilePosition, collidable });
       }
@@ -136,7 +136,7 @@ export class DashEngine {
     const analysedRect: AnalysedTile[] = [];
     const graph = this.createMapGraph(this.spawnPoint);
     const components = findScc(graph);
-    const simpleString = toSimpleString(components);
+
     this.forEachTileInRect(rect, (tile) => {
       const analysedTile = this.analyzePoint(tile, graph, components);
 
@@ -185,7 +185,7 @@ export class DashEngine {
       canStop = true;
     }
 
-    isWall = this.getCollidableAt(pointToAnalyze);
+    isWall = this.getWallAt(pointToAnalyze);
 
     if (graph.getNodesCount() === 1) {
       this.forEachNeighbor(this.spawnPoint, (neighbor) => {
@@ -201,7 +201,7 @@ export class DashEngine {
             const linkedNode = this.nodeToPoint(node);
 
             const isInboundLink = isEqual(linkedNode, neighborPosition);
-            if (!isInboundLink) return;
+            if (isInboundLink) return;
 
             const dash = this.linkToDash(link);
 
@@ -234,14 +234,13 @@ export class DashEngine {
       canCollide,
       numberOfDashesPassingOver,
       componentId,
-      components,
       x: pointToAnalyze.x,
       y: pointToAnalyze.y,
     };
   }
 
   private createMapGraph(start: Point) {
-    if (this.getCollidableAt(start))
+    if (this.getWallAt(start))
       throw Error(
         `cannot create graph from point ${this.pointToString(start)}`
       );
@@ -347,7 +346,7 @@ export class DashEngine {
       y: point.y,
     };
 
-    let positionIsCollidable = this.getCollidableAt(
+    let positionIsCollidable = this.getWallAt(
       addVectors(currentPosition, direction)
     );
 
@@ -364,7 +363,7 @@ export class DashEngine {
 
       currentPosition = addVectors(currentPosition, direction);
 
-      positionIsCollidable = this.getCollidableAt(
+      positionIsCollidable = this.getWallAt(
         addVectors(currentPosition, direction)
       );
     }
@@ -405,5 +404,4 @@ export type AnalysedTile = {
   canStop: boolean;
   numberOfDashesPassingOver: number;
   componentId: number | null;
-  components: Graph<NodeId[]>;
 } & Point;

@@ -23,7 +23,7 @@ describe("DashEngine", () => {
   it("should be able to dash to the right, if the left block is walkable", () => {
     const dashEngine = new DashEngine();
 
-    dashEngine.setCollidableAt({ x: 1, y: 0 }, false);
+    dashEngine.setWallAt({ x: 1, y: 0 }, false);
     const newPlayerPosition = dashEngine.dash("right");
 
     expect(newPlayerPosition).toStrictEqual({ x: 1, y: 0 });
@@ -31,7 +31,7 @@ describe("DashEngine", () => {
 
   it("should get a rect as string", () => {
     const dashEngine = new DashEngine();
-    dashEngine.setCollidableAt({ x: 2, y: 0 }, false);
+    dashEngine.setWallAt({ x: 2, y: 0 }, false);
 
     const map = dashEngine.getRectAsString({
       x: -1,
@@ -131,7 +131,6 @@ describe("DashEngine", () => {
         isWall: false,
         numberOfDashesPassingOver: 0,
       });
-      
     });
 
     it("should contain a wall to the right of spawn that is collidable", () => {
@@ -309,11 +308,30 @@ describe("DashEngine", () => {
       expect(spawnPoint.y).toBe(0);
       expect(components.getNodesCount()).toBe(2);
     });
+
+    it("should have a collidable tile below", () => {
+      const { rect } = dashEngine.analyseRect({
+        x: 0,
+        y: 2,
+        width: 1,
+        height: 1,
+      });
+
+      expect(rect[0]).toMatchObject({
+        canCollide: true,
+        canStop: false,
+        componentId: null,
+        isWall: true,
+        numberOfDashesPassingOver: 0,
+        x: 0,
+        y: 2,
+      });
+    });
   });
 
   describe("map with unreachable tile", () => {
     const dashEngine = new DashEngine();
-    dashEngine.setCollidableAt({ x: 2, y: 0 }, false);
+    dashEngine.setWallAt({ x: 2, y: 0 }, false);
 
     it("should match string", () => {
       const map = dashEngine.getRectAsString({
@@ -403,7 +421,6 @@ describe("DashEngine", () => {
     expect(spawnPoint.canStop).toBe(true);
     expect(spawnPoint.canCollide).toBe(false);
 
-    const p = dashEngine.analyseRect({ x: -2, y: -1, width: 1, height: 1 });
 
     // expect(p.canReach).toBe(true);
     // expect(p.componentId).toBe(0);

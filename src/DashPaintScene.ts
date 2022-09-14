@@ -14,7 +14,7 @@ import createGraph, { Graph as NGraph, Node, NodeId } from "ngraph.graph";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
-import { Dir4, Point } from "./Helpers";
+import { Dir4, floorVector, Point } from "./Helpers";
 
 type SwipeExtended = Swipe & {
   up: boolean;
@@ -44,7 +44,7 @@ export class DashPaintScene extends Phaser.Scene {
   tileSize = 8;
   maxPathLength = 0;
   minPathLength = Infinity;
-  mapSize = 200;
+  mapSize = 10;
   maxScore = 0;
   currentScore = 0;
   zoom = 3;
@@ -229,8 +229,12 @@ export class DashPaintScene extends Phaser.Scene {
         return;
       }
 
-      if (tile.index === 2) tile.index = 0;
-      else tile.index = 2;
+      console.log(tapPoint);
+
+      const isWall = scene.dashEngine.getWallAt(tapPoint);
+      console.log("is wall:", isWall);
+
+      scene.dashEngine.setWallAt(tapPoint, !isWall);
 
       scene.analyzeMap();
     }
@@ -430,14 +434,6 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.currentScore = 0;
 
-    // const tileConnectedComponents = sccOutput.map((component) =>
-    //   component.map((sourceNumber) => {
-    //     if (typeof sourceNumber === "number")
-    //       throw new Error("A node id is a number, but it should be a string");
-    //     return this.stringToPoint(sourceNumber);
-    //   })
-    // );
-
     const colors = chroma
       .scale(["yellow", "008ae5"])
       .colors(analysedComponents.getNodesCount());
@@ -450,25 +446,6 @@ export class DashPaintScene extends Phaser.Scene {
       this.mapSize,
       this.mapSize
     );
-
-    // analysedComponents.forEachNode((componentNode) => {
-    //   if (typeof componentNode.id === "string") throw Error("bug");
-    //   const color = colors[componentNode.id];
-    //   if (color === undefined) throw Error("bug");
-
-    //   componentNode.data
-    //     .map((nodeId) => this.nodeToPoint(nodeId))
-    //     .forEach((tileInComponent) => {
-    //       const tile = this.connectedComponentsLayer.getTileAt(
-    //         tileInComponent.x,
-    //         tileInComponent.y,
-    //         true
-    //       );
-
-    //       tile.index = 2;
-    //       tile.tint = Number(color.replace("#", "0x"));
-    //     });
-    // });
 
     this.layer.replaceByIndex(17, 0, 0, 0, this.mapSize, this.mapSize);
 
@@ -483,13 +460,18 @@ export class DashPaintScene extends Phaser.Scene {
 
       assert(tile);
 
+      if (analysedTile.isWall) {
+        tile.index = 2;
+        if (analysedTile.canCollide) tile.tint = 0xffd0c2;
+        else tile.tint = 0xffffff;
+      } else {
+        tile.index = 0;
+        tile.tint = 0xffffff;
+      }
+
       if (analysedTile.numberOfDashesPassingOver >= 1) {
         tile.index = 17;
         this.maxScore++;
-      }
-
-      if (analysedTile.isWall) {
-        tile.index = 2;
       }
 
       if (analysedTile.componentId !== null) {
