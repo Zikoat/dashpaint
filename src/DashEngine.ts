@@ -3,19 +3,21 @@ import {
   Dir4,
   DIRECTIONS,
   isEqual,
+  isInRect,
   normalizeVector,
   ORIGIN,
   Point,
   Rect,
   scaleVector,
   subtractVectors,
+  toSimpleString,
   vectorLength,
 } from "./Helpers";
 import { MapStorage } from "./MapStorage";
 import seedrandom from "seedrandom";
 import createGraph, { Graph, Link, Node, NodeId } from "ngraph.graph";
 import assert from "assert";
-import { adjacencyListToGraph, findScc } from "./graphHelpers";
+import { findScc } from "./graphHelpers";
 
 export interface DashEngineOptions {
   spawnPoint?: Point;
@@ -127,37 +129,55 @@ export class DashEngine {
     return asciiOutput;
   }
 
-  analyzeRect(rect: Rect): AnalysedTile[] {
-    const analyzedTile: AnalysedTile = {
-      isWall: false,
-      canCollide: false,
-      canStop: false,
-      numberOfDashesPassingOver: 0,
-      componentId: null,
-      components: createGraph(),
-    };
+  analyseRect(rect: Rect): {
+    rect: AnalysedTile[];
+    components: Graph<NodeId[]>;
+  } {
+    const analysedRect: AnalysedTile[] = [];
+    const graph = this.createMapGraph(this.spawnPoint);
+    const components = findScc(graph);
+    const simpleString = toSimpleString(components);
+    this.forEachTileInRect(rect, (tile) => {
+      const analysedTile = this.analyzePoint(tile, graph, components);
 
-    return [
-      analyzedTile,
-      analyzedTile,
-      analyzedTile,
-      analyzedTile,
-      analyzedTile,
-      analyzedTile,
-      analyzedTile,
-      analyzedTile,
-      analyzedTile,
-    ];
+      // todo activeta post condition check
+      // this.verifyAnalysedTilePostConditions(analysedTile)
+      analysedRect.push(analysedTile);
+    });
+
+    graph.forEachLink((link) => {
+      const dash = this.linkToDash(link);
+
+      this.forEachPointInDash(dash, (pointInDash) => {
+        if (isInRect(pointInDash, rect)) {
+          const arrayIndex =
+            rect.width * (pointInDash.y - rect.y) + pointInDash.x - rect.x;
+          const tile = analysedRect[arrayIndex];
+
+          if (!tile) {
+            throw Error("not defined tile");
+          }
+          tile.numberOfDashesPassingOver++;
+        }
+      });
+    });
+
+    if (components === null) throw Error("Components is null");
+
+    return { rect: analysedRect, components };
   }
 
-  analyzePoint(pointToAnalyze: Point): AnalysedTile {
+  analyzePoint(
+    pointToAnalyze: Point,
+    graph = this.createMapGraph(this.spawnPoint),
+    components = findScc(graph)
+  ): AnalysedTile {
     let isWall;
     let canCollide = false;
     let canStop;
     let numberOfDashesPassingOver = 0;
     let componentId: number | null = null;
 
-    const graph = this.createMapGraph(this.spawnPoint);
     const node = graph.getNode(this.pointToString(pointToAnalyze));
     if (node === undefined) {
       canStop = false;
@@ -168,14 +188,11 @@ export class DashEngine {
     isWall = this.getCollidableAt(pointToAnalyze);
 
     if (graph.getNodesCount() === 1) {
-      
       this.forEachNeighbor(this.spawnPoint, (neighbor) => {
         if (isEqual(neighbor, pointToAnalyze)) {
           canCollide = true;
         }
       });
-      if (isEqual(pointToAnalyze, this.spawnPoint)) componentId = 0;
-
     } else if (isWall) {
       this.forEachNeighbor(pointToAnalyze, (neighborPosition, neighbor) => {
         graph.forEachLinkedNode(
@@ -202,20 +219,6 @@ export class DashEngine {
       });
     }
 
-    graph.forEachLink((link) => {
-      const dash = this.linkToDash(link);
-
-      this.forEachPointInDash(dash, (pointInDash) => {
-        if (isEqual(pointInDash, pointToAnalyze)) {
-          numberOfDashesPassingOver++;
-        }
-      });
-    });
-
-    const sccOutput = findScc(graph);
-
-    const components = sccOutput;
-
     components.forEachNode((node) => {
       if (node.data.includes(this.pointToString(pointToAnalyze))) {
         if (componentId !== null) throw Error("bug");
@@ -232,16 +235,18 @@ export class DashEngine {
       numberOfDashesPassingOver,
       componentId,
       components,
+      x: pointToAnalyze.x,
+      y: pointToAnalyze.y,
     };
   }
 
-  private createMapGraph(start: Point): Graph {
+  private createMapGraph(start: Point) {
     if (this.getCollidableAt(start))
       throw Error(
         `cannot create graph from point ${this.pointToString(start)}`
       );
 
-    const graph = createGraph();
+    const graph = createGraph<string>();
 
     const stack = [this.pointToString(start)];
     const visited: Record<string, boolean> = {};
@@ -305,14 +310,19 @@ export class DashEngine {
   }
 
   private pointToString(p: Point): string {
-    return JSON.stringify({ x: p.x, y: p.y });
+    return `${p.x},${p.y}`;
   }
 
   private stringToPoint(s: string): Point {
-    const parsedPoint = JSON.parse(s);
+    const splitString = s.split(",");
 
-    assert(typeof parsedPoint.x === "number");
-    assert(typeof parsedPoint.y === "number");
+    const parsedPoint = {
+      x: parseInt(splitString[0] as string),
+      y: parseInt(splitString[1] as string),
+    };
+
+    // assert(typeof parsedPoint.x === "number");
+    // assert(typeof parsedPoint.y === "number");
 
     return parsedPoint;
   }
@@ -370,6 +380,23 @@ export class DashEngine {
       callback(addVectors(point, direction), direction);
     }
   }
+
+  private verifyAnalysedTilePostConditions(tile: AnalysedTile) {
+    if (tile.canCollide) assert(tile.isWall);
+
+    if (tile.numberOfDashesPassingOver >= 1) {
+      assert(!tile.isWall);
+    }
+
+    if (tile.canStop) {
+      assert(!tile.isWall);
+      assert(tile.numberOfDashesPassingOver >= 2);
+      assert(tile.componentId);
+      assert(tile.componentId > 0);
+    } else {
+      assert(tile.componentId === null);
+    }
+  }
 }
 
 export type AnalysedTile = {
@@ -379,4 +406,4 @@ export type AnalysedTile = {
   numberOfDashesPassingOver: number;
   componentId: number | null;
   components: Graph<NodeId[]>;
-};
+} & Point;

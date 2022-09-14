@@ -44,10 +44,11 @@ export class DashPaintScene extends Phaser.Scene {
   tileSize = 8;
   maxPathLength = 0;
   minPathLength = Infinity;
-  mapSize = 20;
+  mapSize = 200;
   maxScore = 0;
   currentScore = 0;
   zoom = 3;
+  seed: string | undefined = "1";
 
   walkableTiles: Point[] = [];
   movementQueue: Point[] = [];
@@ -158,6 +159,8 @@ export class DashPaintScene extends Phaser.Scene {
     });
 
     this.resetGame();
+
+    this.seed = undefined;
   }
 
   resetGame() {
@@ -172,7 +175,8 @@ export class DashPaintScene extends Phaser.Scene {
         width: this.mapSize - 2,
         height: this.mapSize - 2,
       },
-      0.75
+      0.75,
+      this.seed
     );
     this.dashEngine.fillCollidableAt(
       {
@@ -408,16 +412,23 @@ export class DashPaintScene extends Phaser.Scene {
   // }
 
   analyzeMap() {
-    
+    console.time("analyseMap");
+
     this.setPlayerPosition(this.dashEngine.spawnPoint);
 
+    console.time("analyseRect");
+
+    const { rect: analysedRect, components: analysedComponents } =
+      this.dashEngine.analyseRect({
+        x: 0,
+        y: 0,
+        width: this.mapSize,
+        height: this.mapSize,
+      });
+
+    console.timeEnd("analyseRect");
+
     this.currentScore = 0;
-
-    
-
-    const graph = this.createGraph(this.getPlayerPosition());
-
-    const sccOutput = findScc(graph);
 
     // const tileConnectedComponents = sccOutput.map((component) =>
     //   component.map((sourceNumber) => {
@@ -429,7 +440,7 @@ export class DashPaintScene extends Phaser.Scene {
 
     const colors = chroma
       .scale(["yellow", "008ae5"])
-      .colors(sccOutput.getNodesCount());
+      .colors(analysedComponents.getNodesCount());
 
     this.connectedComponentsLayer.replaceByIndex(
       2,
@@ -440,57 +451,92 @@ export class DashPaintScene extends Phaser.Scene {
       this.mapSize
     );
 
-    sccOutput.forEachNode((componentNode) => {
-      if (typeof componentNode.id === "string") throw Error("bug");
-      const color = colors[componentNode.id];
-      if (color === undefined) throw Error("bug");
+    // analysedComponents.forEachNode((componentNode) => {
+    //   if (typeof componentNode.id === "string") throw Error("bug");
+    //   const color = colors[componentNode.id];
+    //   if (color === undefined) throw Error("bug");
 
-      componentNode.data
-        .map((nodeId) => this.nodeToPoint(nodeId))
-        .forEach((tileInComponent) => {
-          const tile = this.connectedComponentsLayer.getTileAt(
-            tileInComponent.x,
-            tileInComponent.y,
-            true
-          );
+    //   componentNode.data
+    //     .map((nodeId) => this.nodeToPoint(nodeId))
+    //     .forEach((tileInComponent) => {
+    //       const tile = this.connectedComponentsLayer.getTileAt(
+    //         tileInComponent.x,
+    //         tileInComponent.y,
+    //         true
+    //       );
 
-          tile.index = 2;
-          tile.tint = Number(color.replace("#", "0x"));
-        });
-    });
+    //       tile.index = 2;
+    //       tile.tint = Number(color.replace("#", "0x"));
+    //     });
+    // });
 
     this.layer.replaceByIndex(17, 0, 0, 0, this.mapSize, this.mapSize);
 
     this.maxScore = 0;
-    graph.forEachLink((link) => {
-      assert(typeof link.fromId === "string");
-      assert(typeof link.toId === "string");
-      const fromPoint = this.stringToPoint(link.fromId);
-      const toPoint = this.stringToPoint(link.toId);
 
-      const dash = toPoint.subtract(fromPoint);
-      const movementDirection = new Phaser.Math.Vector2(dash).normalize();
-      assert(
-        this.isValidMovementVector(movementDirection),
-        `${this.simplifyMovement(
-          movementDirection
-        )} is not a valid movement vector`
-      );
-      for (let i = 0; i < dash.length(); i++) {
-        const currentPosition = new Phaser.Math.Vector2(movementDirection)
-          .scale(i)
-          .add(fromPoint);
-        const tile = this.layer.getTileAt(
-          currentPosition.x,
-          currentPosition.y,
+    analysedRect.forEach((analysedTile) => {
+      const tile = this.layer.getTileAt(
+        analysedTile.x,
+        analysedTile.y,
+        true
+      ) as Phaser.Tilemaps.Tile | null;
+
+      assert(tile);
+
+      if (analysedTile.numberOfDashesPassingOver >= 1) {
+        tile.index = 17;
+        this.maxScore++;
+      }
+
+      if (analysedTile.isWall) {
+        tile.index = 2;
+      }
+
+      if (analysedTile.componentId !== null) {
+        const color = colors[analysedTile.componentId];
+        assert(color);
+
+        const ccTile = this.connectedComponentsLayer.getTileAt(
+          analysedTile.x,
+          analysedTile.y,
           true
-        ) as Phaser.Tilemaps.Tile | null;
-        if (tile && tile.index !== 17) {
-          tile.index = 17;
-          this.maxScore++;
-        }
+        );
+        assert(ccTile);
+        ccTile.index = 2;
+        ccTile.tint = Number(color.replace("#", "0x"));
       }
     });
+
+    // graph.forEachLink((link) => {
+    //   assert(typeof link.fromId === "string");
+    //   assert(typeof link.toId === "string");
+    //   const fromPoint = this.stringToPoint(link.fromId);
+    //   const toPoint = this.stringToPoint(link.toId);
+
+    //   const dash = toPoint.subtract(fromPoint);
+    //   const movementDirection = new Phaser.Math.Vector2(dash).normalize();
+    //   assert(
+    //     this.isValidMovementVector(movementDirection),
+    //     `${this.simplifyMovement(
+    //       movementDirection
+    //     )} is not a valid movement vector`
+    //   );
+    //   for (let i = 0; i < dash.length(); i++) {
+    //     const currentPosition = new Phaser.Math.Vector2(movementDirection)
+    //       .scale(i)
+    //       .add(fromPoint);
+    //     const tile = this.layer.getTileAt(
+    //       currentPosition.x,
+    //       currentPosition.y,
+    //       true
+    //     ) as Phaser.Tilemaps.Tile | null;
+    //     if (tile && tile.index !== 17) {
+    //       tile.index = 17;
+    //       this.maxScore++;
+    //     }
+    //   }
+    // });
+    console.timeEnd("analyseMap");
   }
 
   nodeToPoint(node: Node | NodeId): Point {

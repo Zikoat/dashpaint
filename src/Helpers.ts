@@ -1,3 +1,4 @@
+import { faRectangleXmark } from "@fortawesome/free-solid-svg-icons";
 import { Graph, Node, NodeId } from "ngraph.graph";
 
 export const ORIGIN = { x: 0, y: 0 };
@@ -66,10 +67,7 @@ export function toSimpleString(graph: Graph): string {
 
   graph.forEachNode((node) => {
     if (node.links === null) {
-      let nodeDataString = node.data
-        ? `(${nodeToSimpleString(node.data)})`
-        : "";
-      output += `${node.id}${nodeDataString}\n`;
+      output += nodeToSimpleString(node) + `\n`;
     }
   });
 
@@ -88,7 +86,7 @@ function nodeToSimpleString(node: Node): string {
   let nodeDataString = "";
 
   if (isStringArray(node.data)) {
-    nodeDataString = node.data.join(",").replaceAll('"', "");
+    nodeDataString = node.data.join(" ").replaceAll('"', "");
   } else if (node.data) {
     nodeDataString = `${node.data}`;
   }
@@ -106,4 +104,19 @@ function isStringArray(arr: unknown): arr is string[] {
 
 function isObject(obj: unknown): obj is object {
   return typeof obj === "object" && obj !== null;
+}
+
+export function isInRect(point: Point, rect: Rect) {
+  if (rect.width <= 0 || rect.height <= 0) throw Error("rect has no area");
+  return (
+    point.x >= rect.x &&
+    point.y >= rect.y &&
+    point.x < rect.x + rect.width &&
+    point.y < rect.y + rect.height
+  );
+}
+
+export function pointInRectToIndex(point: Point, rect: Rect) {
+  if (!isInRect(point, rect)) throw Error("point is outside rect");
+  return rect.width * (point.y - rect.y) + point.x - rect.x;
 }

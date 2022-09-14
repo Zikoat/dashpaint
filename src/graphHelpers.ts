@@ -1,27 +1,23 @@
-import createGraph, { Graph, NodeId } from "ngraph.graph";
+import assert from "assert";
+import createGraph, { Graph, Node, NodeId } from "ngraph.graph";
 import scc from "strongly-connected-components";
 
 function toAdjacencyList(graph: Graph) {
+  const nodeIndexes: Record<NodeId, number> = {};
   const nodes: NodeId[] = [];
   const adjacencyList: number[][] = [];
 
-  graph.forEachLink((link) => {
-    let fromIndex = nodes.findIndex((node) => node === link.fromId);
-    if (fromIndex === -1) {
-      nodes.push(link.fromId);
-      adjacencyList.push([]);
-      fromIndex = nodes.length - 1;
-    }
-    let toIndex = nodes.findIndex((node) => node === link.toId);
-    if (toIndex === -1) {
-      nodes.push(link.toId);
-      adjacencyList.push([]);
-      toIndex = nodes.length - 1;
-    }
+  graph.forEachNode((node) => {
+    const nodeIndex = nodes.push(node.id)-1;
+    adjacencyList.push([]);
+    nodeIndexes[node.id] = nodeIndex;
+  });
 
-    const newLength = adjacencyList[fromIndex]?.push(toIndex);
-    if (newLength === undefined)
-      throw new Error(`Could not add a link from ${fromIndex} to ${toIndex}`);
+  graph.forEachLink((link) => {
+    let fromIndex = nodeIndexes[link.fromId]!;
+    let toIndex = nodeIndexes[link.toId]!;
+
+    adjacencyList[fromIndex]!.push(toIndex)
   });
 
   return { nodes, adjacencyList };

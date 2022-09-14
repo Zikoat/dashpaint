@@ -1,4 +1,4 @@
-import createGraph, { Graph } from "ngraph.graph";
+import { spawn } from "child_process";
 import { describe, expect, it } from "vitest";
 import { AnalysedTile, DashEngine } from "./DashEngine";
 import { ORIGIN, toSimpleString } from "./Helpers";
@@ -27,33 +27,6 @@ describe("DashEngine", () => {
     const newPlayerPosition = dashEngine.dash("right");
 
     expect(newPlayerPosition).toStrictEqual({ x: 1, y: 0 });
-  });
-
-  it("should get map data so we can create an ascii image of the map", () => {
-    const dashEngine = new DashEngine();
-    let asciiOutput = "";
-    let counter = 0;
-    const map = dashEngine.forEachTileInRect(
-      { x: -1, y: -1, width: 3, height: 3 },
-      (tile) => {
-        counter++;
-        expect(typeof tile.collidable).toBe("boolean");
-        expect(typeof tile.x).toBe("number");
-        expect(typeof tile.y).toBe("number");
-        asciiOutput += tile.collidable ? "#" : ".";
-        if (tile.x === 1) {
-          asciiOutput += "\n";
-        }
-      }
-    );
-
-    expect(counter).toBe(9);
-    expect(asciiOutput).toMatchInlineSnapshot(`
-      "###
-      #.#
-      ###
-      "
-    `);
   });
 
   it("should get a rect as string", () => {
@@ -145,19 +118,30 @@ describe("DashEngine", () => {
     });
 
     it("should contain a floor tile on the spawn point", () => {
-      const spawnPoint = dashEngine.analyzePoint({ x: 0, y: 0 });
-      expect(spawnPoint).toMatchObject({
+      const spawnPoint = dashEngine.analyseRect({
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1,
+      });
+      expect(spawnPoint.rect[0]).toMatchObject({
         canCollide: false,
         canStop: true,
         componentId: 0,
         isWall: false,
         numberOfDashesPassingOver: 0,
       });
+      
     });
 
     it("should contain a wall to the right of spawn that is collidable", () => {
-      const wallBesideSpawn = dashEngine.analyzePoint({ x: 1, y: 0 });
-      expect(wallBesideSpawn).toMatchObject({
+      const wallBesideSpawn = dashEngine.analyseRect({
+        x: 1,
+        y: 0,
+        width: 1,
+        height: 1,
+      });
+      expect(wallBesideSpawn.rect[0]).toMatchObject({
         canCollide: true,
         canStop: false,
         componentId: null,
@@ -167,8 +151,13 @@ describe("DashEngine", () => {
     });
 
     it("should contain walls that are not collidable", () => {
-      const otherWall = dashEngine.analyzePoint({ x: 3, y: 3 });
-      expect(otherWall).toMatchObject({
+      const otherWall = dashEngine.analyseRect({
+        x: 3,
+        y: 3,
+        width: 1,
+        height: 1,
+      });
+      expect(otherWall.rect[0]).toMatchObject({
         canCollide: false,
         canStop: false,
         componentId: null,
@@ -198,8 +187,13 @@ describe("DashEngine", () => {
     });
 
     it("should contain a stoppable tile to the right", () => {
-      const stoppableTile = dashEngine.analyzePoint({ x: 2, y: 0 });
-      expect(stoppableTile).toMatchObject({
+      const stoppableTile = dashEngine.analyseRect({
+        x: 2,
+        y: 0,
+        width: 1,
+        height: 1,
+      });
+      expect(stoppableTile.rect[0]).toMatchObject({
         canCollide: false,
         canStop: true,
         componentId: 0,
@@ -209,8 +203,13 @@ describe("DashEngine", () => {
     });
 
     it("should contain a dashable but unstoppable tile in the middle", () => {
-      const reachableTile = dashEngine.analyzePoint({ x: 1, y: 0 });
-      expect(reachableTile).toMatchObject({
+      const reachableTile = dashEngine.analyseRect({
+        x: 1,
+        y: 0,
+        width: 1,
+        height: 1,
+      });
+      expect(reachableTile.rect[0]).toMatchObject({
         canCollide: false,
         canStop: false,
         componentId: null,
@@ -242,8 +241,13 @@ describe("DashEngine", () => {
     });
 
     it("should have a spawn point which is in component with index 1", () => {
-      const spawnTile = dashEngine.analyzePoint({ x: 0, y: 0 });
-      expect(spawnTile).toMatchObject({
+      const spawnTile = dashEngine.analyseRect({
+        x: 0,
+        y: 0,
+        width: 1,
+        height: 1,
+      });
+      expect(spawnTile.rect[0]).toMatchObject({
         canCollide: false,
         canStop: true,
         componentId: 1,
@@ -253,8 +257,13 @@ describe("DashEngine", () => {
     });
 
     it("should contain tile that is in component with index 0", () => {
-      const stoppableTile = dashEngine.analyzePoint({ x: 1, y: 1 });
-      expect(stoppableTile).toMatchObject({
+      const stoppableTile = dashEngine.analyseRect({
+        x: 1,
+        y: 1,
+        width: 1,
+        height: 1,
+      });
+      expect(stoppableTile.rect[0]).toMatchObject({
         canCollide: false,
         canStop: true,
         componentId: 0,
@@ -263,41 +272,14 @@ describe("DashEngine", () => {
       });
     });
 
-    describe("map with unreachable tile", () => {
-      const dashEngine = new DashEngine();
-      dashEngine.setCollidableAt({ x: 2, y: 0 }, false);
-
-      it("should match string", () => {
-        const map = dashEngine.getRectAsString({
-          x: -1,
-          y: -1,
-          width: 5,
-          height: 3,
-        });
-
-        expect(map).toMatchInlineSnapshot(`
-          "#####
-          #.#.#
-          #####"
-        `);
-      });
-
-      it("should contain a non-reachable tile to the right", () => {
-        const analysedTile = dashEngine.analyzePoint({ x: 2, y: 0 });
-        expect(analysedTile).toMatchObject({
-          canCollide: false,
-          canStop: false,
-          componentId: null,
-          isWall: false,
-          numberOfDashesPassingOver: 0,
-        });
-        expect(toSimpleString(analysedTile.components)).toMatchInlineSnapshot('""');
-      });
-    });
-
     it("should return information about how the components are linked", () => {
-      const stoppableTile = dashEngine.analyzePoint({ x: 1, y: 1 });
-      expect(stoppableTile).toMatchObject({
+      const stoppableTile = dashEngine.analyseRect({
+        x: 1,
+        y: 1,
+        width: 1,
+        height: 1,
+      });
+      expect(stoppableTile.rect[0]).toMatchObject({
         canCollide: false,
         canStop: true,
         componentId: 0,
@@ -308,7 +290,62 @@ describe("DashEngine", () => {
       expect(stoppableTile.components).toHaveProperty("forEachNode");
 
       expect(toSimpleString(stoppableTile.components)).toMatchInlineSnapshot(
-        '"1({x:0,y:1},{x:0,y:0})->0({x:-1,y:1},{x:1,y:1})"'
+        '"1(0,1 0,0)->0(-1,1 1,1)"'
+      );
+    });
+
+    it("should return multiple analysed tiles in a rect", () => {
+      const { rect, components } = dashEngine.analyseRect({
+        x: -1,
+        y: 0,
+        width: 3,
+        height: 2,
+      });
+
+      expect(rect).toHaveLength(6);
+      const spawnPoint = rect[1] as AnalysedTile;
+
+      expect(spawnPoint.x).toBe(0);
+      expect(spawnPoint.y).toBe(0);
+      expect(components.getNodesCount()).toBe(2);
+    });
+  });
+
+  describe("map with unreachable tile", () => {
+    const dashEngine = new DashEngine();
+    dashEngine.setCollidableAt({ x: 2, y: 0 }, false);
+
+    it("should match string", () => {
+      const map = dashEngine.getRectAsString({
+        x: -1,
+        y: -1,
+        width: 5,
+        height: 3,
+      });
+
+      expect(map).toMatchInlineSnapshot(`
+        "#####
+        #.#.#
+        #####"
+      `);
+    });
+
+    it("should contain a non-reachable tile to the right", () => {
+      const analysedTile = dashEngine.analyseRect({
+        x: 2,
+        y: 0,
+        width: 1,
+        height: 1,
+      });
+      expect(analysedTile.rect[0]).toMatchObject({
+        canCollide: false,
+        canStop: false,
+        componentId: null,
+        isWall: false,
+        numberOfDashesPassingOver: 0,
+      });
+      expect(toSimpleString(analysedTile.components)).toMatchInlineSnapshot(
+        '"0(0,0)"'
       );
     });
   });
@@ -334,16 +371,16 @@ describe("DashEngine", () => {
       "1"
     );
 
-    const analyzedMap: AnalysedTile[] = dashEngine.analyzeRect({
+    const { rect } = dashEngine.analyseRect({
       x: -1,
       y: -1,
       width: 3,
       height: 3,
     });
 
-    expect(analyzedMap).toHaveLength(9);
+    expect(rect).toHaveLength(9);
 
-    for (const tile of analyzedMap) {
+    for (const tile of rect) {
       if (tile.canCollide) expect(tile.isWall).toBe(true);
 
       if (tile.numberOfDashesPassingOver >= 1) {
@@ -359,17 +396,18 @@ describe("DashEngine", () => {
       }
     }
 
-    // spawn point
-    const spawnPoint = dashEngine.analyzePoint({ x: -1, y: -1 });
+    const shit = dashEngine.analyseRect({ x: -1, y: -1, width: 1, height: 1 });
+
+    const spawnPoint = shit.rect[0]!;
     expect(spawnPoint.isWall).toBe(false);
     expect(spawnPoint.canStop).toBe(true);
     expect(spawnPoint.canCollide).toBe(false);
 
-    const p = dashEngine.analyzePoint({ x: -2, y: -1 });
+    const p = dashEngine.analyseRect({ x: -2, y: -1, width: 1, height: 1 });
 
     // expect(p.canReach).toBe(true);
     // expect(p.componentId).toBe(0);
     // expect(p.numberOfDashesPassingOver).toBe(4);
-    // expect(p).toStrictEqual(analyzedMap[0]);
+    // expect(p).toStrictEqual(analysedMap[0]);
   });
 });
