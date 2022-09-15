@@ -6,6 +6,7 @@ import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
 import { Dir4, Point } from "./Helpers";
+import { runInThisContext } from "vm";
 
 type SwipeExtended = Swipe & {
   up: boolean;
@@ -31,11 +32,12 @@ export class DashPaintScene extends Phaser.Scene {
   tileSize = 8;
   // maxPathLength = 0;
   // minPathLength = Infinity;
-  mapSize = 100;
+  mapSize = 40;
   maxScore = 0;
   currentScore = 0;
   zoom = 3;
   seed: string | undefined = "1";
+  paintColor = 0xff44ff;
 
   movementQueue: Point[] = [];
 
@@ -79,6 +81,7 @@ export class DashPaintScene extends Phaser.Scene {
     playerSprite.add("player", 0, 0, 24, this.tileSize, this.tileSize);
 
     this.player = this.add.image(0, 0, playerSprite);
+    this.player.depth = 3;
     this.player.tint = 0x00ffff;
 
     this.pathLengthColorLayer = this.map.createBlankLayer(
@@ -89,13 +92,13 @@ export class DashPaintScene extends Phaser.Scene {
       "connectedComponents",
       this.tileset
     );
-    this.connectedComponentsLayer.alpha = 0.75;
-    this.connectedComponentsLayer.depth = -1;
+    this.connectedComponentsLayer.alpha = 0;
+    this.connectedComponentsLayer.depth = 1;
     this.setDefaultLayer();
 
     this.gui
       .add(this.connectedComponentsLayer, "alpha", 0, 1)
-      .name("Show reachability");
+      .name("Show analysis");
 
     htmlPhaserFunctions.startEdit = () => this.startEdit();
     htmlPhaserFunctions.stopEdit = () => this.stopEdit();
@@ -138,6 +141,16 @@ export class DashPaintScene extends Phaser.Scene {
       color: "white",
       fontStyle: "strong",
       resolution: 10,
+    });
+
+    const myValueToEdit = {
+      playerTint: this.paintColor,
+    };
+
+    const playerColor = this.gui.addColor(myValueToEdit, "playerTint");
+    playerColor.onChange((color) => {
+      console.log("changing player color to ", color);
+      this.paintColor = chroma(color).num();
     });
 
     this.resetGame();
@@ -222,9 +235,7 @@ export class DashPaintScene extends Phaser.Scene {
     }
   }
 
-  // colorMapPathLengthMinMax() {
-  //   const colorScale = chroma.scale(["green", "yellow", "red"]);
-  //   colorScale.domain([this.minPathLength, this.maxPathLength]);
+  // colorMapPathLengthMinMax() {f
 
   //   for (const point of this.walkableTiles) {
   //     const tile = this.pathLengthColorLayer.getTileAt(point.x, point.y, true);
@@ -233,7 +244,7 @@ export class DashPaintScene extends Phaser.Scene {
   //     if (typeof maxPathLength !== "number")
   //       throw new Error("maxPathLength is undefined on a walkable tile");
 
-  //     tile.tint = colorScale(maxPathLength).num();
+  //   f
   //   }
   //   this.pathLengthColorLayer.alpha = 0;
   //   this.pathLengthColorLayer.depth = -2;
@@ -280,8 +291,9 @@ export class DashPaintScene extends Phaser.Scene {
         this.getPlayerPosition().x,
         this.getPlayerPosition().y
       );
-      if (currentTile.index === 17) {
-        currentTile.index = 0;
+      if (currentTile.index === 0) {
+        currentTile.index = 2;
+        currentTile.tint = this.paintColor;
         this.currentScore++;
       }
     }
@@ -397,6 +409,8 @@ export class DashPaintScene extends Phaser.Scene {
     this.layer.replaceByIndex(17, 0, 0, 0, this.mapSize, this.mapSize);
 
     this.maxScore = 0;
+    const colorScale = chroma.scale(["green", "yellow", "red"]);
+     colorScale.domain([1,4]);
 
     analysedRect.forEach((analysedTile) => {
       const tile = this.layer.getTileAt(
@@ -414,16 +428,26 @@ export class DashPaintScene extends Phaser.Scene {
       );
       assert(ccTile);
 
+      ccTile.index = 0;
+      ccTile.tint = 0xffffff;
+      tile.index = 0;
+      tile.tint = 0xffffff;
+
       if (analysedTile.isWall && analysedTile.canCollide) {
         tile.index = 2;
       } else if (analysedTile.isWall) {
         ccTile.index = 2;
         ccTile.tint = 0xffffff;
         tile.index = 0;
+      } else {
+        tile.index = 0;
+        tile.tint = 0xffffff;
       }
 
       if (analysedTile.numberOfDashesPassingOver >= 1) {
-        tile.index = 17;
+        ccTile.index = 17;
+        ccTile.tint = colorScale(analysedTile.numberOfDashesPassingOver).num();
+        
         this.maxScore++;
       }
 
