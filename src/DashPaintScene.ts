@@ -157,6 +157,8 @@ export class DashPaintScene extends Phaser.Scene {
       this.paintColor = chroma(color).num();
     });
 
+    this.gui.close();
+
     this.resetGame();
   }
 
