@@ -216,6 +216,22 @@ describe("DashEngine", () => {
         numberOfDashesPassingOver: 2,
       });
     });
+
+    it("should contain a collidable wall to the right and below", () => {
+      const reachableTile = dashEngine.analyseRect({
+        x: 2,
+        y: 1,
+        width: 1,
+        height: 1,
+      });
+      expect(reachableTile.rect[0]).toMatchObject({
+        canCollide: true,
+        canStop: false,
+        componentId: null,
+        isWall: true,
+        numberOfDashesPassingOver: 0,
+      });
+    });
   });
 
   describe("map with 2 components", () => {

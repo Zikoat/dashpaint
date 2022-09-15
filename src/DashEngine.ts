@@ -216,6 +216,15 @@ export class DashEngine {
           },
           false
         );
+        const canStopOnNeighbor = !!graph.getNode(
+          this.pointToString(neighborPosition)
+        );
+        const oppositeWallOfNeighborIsWall = this.getWallAt(
+          subtractVectors(neighborPosition, neighbor)
+        );
+        if (oppositeWallOfNeighborIsWall && canStopOnNeighbor) {
+          canCollide = true;
+        }
       });
     }
 
