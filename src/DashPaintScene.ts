@@ -36,8 +36,9 @@ export class DashPaintScene extends Phaser.Scene {
   maxScore = 0;
   currentScore = 0;
   zoom = 3;
-  seed: string | undefined = "1";
+  seed: number | undefined = 321;
   paintColor = 0xff44ff;
+  ccLayerDefaultAlpha = 0;
 
   movementQueue: Point[] = [];
 
@@ -92,7 +93,7 @@ export class DashPaintScene extends Phaser.Scene {
       "connectedComponents",
       this.tileset
     );
-    this.connectedComponentsLayer.alpha = 0;
+    this.connectedComponentsLayer.alpha = this.ccLayerDefaultAlpha;
     this.connectedComponentsLayer.depth = 1;
     this.setDefaultLayer();
 
@@ -102,7 +103,10 @@ export class DashPaintScene extends Phaser.Scene {
 
     htmlPhaserFunctions.startEdit = () => this.startEdit();
     htmlPhaserFunctions.stopEdit = () => this.stopEdit();
-    htmlPhaserFunctions.clickReset = () => this.resetGame();
+    htmlPhaserFunctions.clickReset = () => {
+      this.seed = undefined;
+      this.resetGame();
+    };
 
     this.input.keyboard.on("keydown-UP", () => {
       this.enqueueMovement("up");
@@ -154,8 +158,6 @@ export class DashPaintScene extends Phaser.Scene {
     });
 
     this.resetGame();
-
-    this.seed = undefined;
   }
 
   resetGame() {
@@ -171,7 +173,7 @@ export class DashPaintScene extends Phaser.Scene {
         height: this.mapSize - 2,
       },
       0.65,
-      this.seed
+      this.seed?.toString()
     );
     this.dashEngine.fillCollidableAt(
       {
@@ -410,7 +412,7 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.maxScore = 0;
     const colorScale = chroma.scale(["green", "yellow", "red"]);
-     colorScale.domain([1,4]);
+    colorScale.domain([1, 4]);
 
     analysedRect.forEach((analysedTile) => {
       const tile = this.layer.getTileAt(
@@ -447,7 +449,7 @@ export class DashPaintScene extends Phaser.Scene {
       if (analysedTile.numberOfDashesPassingOver >= 1) {
         ccTile.index = 17;
         ccTile.tint = colorScale(analysedTile.numberOfDashesPassingOver).num();
-        
+
         this.maxScore++;
       }
 
