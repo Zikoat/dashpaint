@@ -1,6 +1,4 @@
-import { isIndex } from "mathjs";
-import createGraph, { Node, NodeId } from "ngraph.graph";
-import { nba } from "ngraph.path";
+import createGraph, {  } from "ngraph.graph";
 import { describe, expect, it } from "vitest";
 import { adjacencyListToGraph, findScc } from "./graphHelpers";
 import {
@@ -9,11 +7,13 @@ import {
   isInRect,
   isVector,
   normalizeVector,
-  ORIGIN,
   pointInRectToIndex,
   subtractVectors,
-  toSimpleString,
+  graphtoSimpleString,
+  pathToSimpleString,
+  mapRange,
 } from "./Helpers";
+import { MyPathFinder } from "./PathFinder";
 
 describe("Graph", () => {
   it("it should create a graph", () => {
@@ -28,7 +28,7 @@ describe("Graph", () => {
     g.addNode("b");
     g.addNode("e");
 
-    expect(toSimpleString(g)).toMatchInlineSnapshot(`
+    expect(graphtoSimpleString(g)).toMatchInlineSnapshot(`
       "e
       c->d
       a->b"
@@ -40,7 +40,7 @@ describe("Graph", () => {
     graph.addLink("a", "b");
     graph.addLink("b", "c");
 
-    expect(toSimpleString(graph)).toMatchInlineSnapshot(`
+    expect(graphtoSimpleString(graph)).toMatchInlineSnapshot(`
     "a->b
     b->c"
   `);
@@ -55,7 +55,7 @@ describe("Graph", () => {
 
       expect(graph.getNodesCount()).toMatchInlineSnapshot("4");
       expect(graph.getLinksCount()).toMatchInlineSnapshot("6");
-      expect(toSimpleString(graph)).toMatchInlineSnapshot(`
+      expect(graphtoSimpleString(graph)).toMatchInlineSnapshot(`
         "a->b
         b->a
         b->c
@@ -70,7 +70,7 @@ describe("Graph", () => {
 
       const graph = adjacencyListToGraph(adjacencyList);
 
-      expect(toSimpleString(graph)).toMatchInlineSnapshot(`
+      expect(graphtoSimpleString(graph)).toMatchInlineSnapshot(`
         "0->1
         1->2
         2->0"
@@ -88,33 +88,69 @@ describe("Graph", () => {
 
       const connectedComponents = findScc(graph);
 
-      expect(toSimpleString(connectedComponents)).toMatchInlineSnapshot(
+      expect(graphtoSimpleString(connectedComponents)).toMatchInlineSnapshot(
         '"1(b a)->0(c)"'
       );
     });
   });
 
-  describe("pathfinding", () => {
-    it("should find a path in the graph", () => {
-      const g = createGraph();
-      g.addLink(1, 2);
-      g.addLink(2, 3);
-      g.addLink(2, 4);
+  describe.each([{ type: MyPathFinder, name: "MyPathFinder" }])(
+    "pathfinder $name",
+    () => {
+      it("a graph with only 1 node should not find a path because there are no edges", () => {
+        const g = createGraph();
+        const nodeName = "a";
+        g.addNode(nodeName);
 
-      g.addLink(4, 1);
+        const pathfinder = new MyPathFinder(g, { oriented: true });
 
-      const pathfinder = nba(g, { oriented: true });
-      const fromNodeId = 1;
-      const toNodeId = 4;
-      let foundPath = pathfinder.find(fromNodeId, toNodeId);
+        let foundPath = pathfinder.find(nodeName, nodeName);
 
-      const toSimplePath = (path: Node[]) => {
-        return path.map((node) => node.id).join("->");
-      };
+        const str = pathToSimpleString(foundPath);
 
-      expect(toSimplePath(foundPath)).toBe("4->2->1");
-    });
-  });
+        expect(str).toMatchInlineSnapshot('""');
+      });
+
+      it("should find a path in a directed graph", () => {
+        const g = createGraph();
+        g.addLink(1, 2);
+        g.addLink(2, 3);
+        g.addLink(3, 4);
+        g.addLink(4, 1);
+
+        const pathfinder = new MyPathFinder(g);
+        const fromNodeId = 1;
+        const toNodeId = 4;
+        let foundPath = pathfinder.find(fromNodeId, toNodeId);
+
+        expect(pathToSimpleString(foundPath)).toBe("1->2->3->4");
+      });
+
+      it("a graph with 2 nodes should return a path with 2 nodes", () => {
+        const g = createGraph();
+
+        g.addLink("a", "b");
+
+        const pathfinder = new MyPathFinder(g);
+
+        let foundPath = pathfinder.find("a", "b");
+
+        expect(pathToSimpleString(foundPath)).toBe("a->b");
+      });
+
+      it("should not find a path if there is none", () => {
+        const g = createGraph();
+
+        g.addLink("a", "b");
+
+        const pathfinder = new MyPathFinder(g);
+
+        let foundPath = pathfinder.find("b", "a");
+
+        expect(pathToSimpleString(foundPath)).toBe("");
+      });
+    }
+  );
 });
 
 describe("Vectors", () => {
@@ -205,9 +241,9 @@ describe("isInRect", () => {
     expect(isInRect({ x: 0, y: 1 }, { x: 0, y: 0, width: 1, height: 1 })).toBe(
       false
     );
-    expect(
-      isInRect({ x: 4, y: 4 }, { x: 1, y: 1, width: 3, height: 3 })
-    ).toBe(false);
+    expect(isInRect({ x: 4, y: 4 }, { x: 1, y: 1, width: 3, height: 3 })).toBe(
+      false
+    );
   });
 
   it("should fail if rect has 0 or less area", () => {
@@ -242,5 +278,14 @@ describe("pointToRectIndex", () => {
     expect(() =>
       pointInRectToIndex({ x: 4, y: 4 }, { x: 1, y: 1, width: 3, height: 3 })
     ).toThrowErrorMatchingInlineSnapshot('"point is outside rect"');
+  });
+});
+
+describe("mapNumberRange", () => {
+  it("should map range -1,1 to 1,2", () => {
+    expect(mapRange(0, -1, 1, 1, 2)).toBe(1.5);
+  });
+  it("should not fail if the range is 2,2 to 0,1 when the current value is 2", () => {
+    expect(mapRange(2, 2, 2, 0, 1));
   });
 });

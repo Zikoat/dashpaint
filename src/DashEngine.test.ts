@@ -1,7 +1,6 @@
-import { spawn } from "child_process";
 import { describe, expect, it } from "vitest";
 import { AnalysedTile, DashEngine } from "./DashEngine";
-import { ORIGIN, toSimpleString } from "./Helpers";
+import { ORIGIN, graphtoSimpleString } from "./Helpers";
 
 describe("DashEngine", () => {
   it("should be instantiated", () => {
@@ -304,9 +303,9 @@ describe("DashEngine", () => {
 
       expect(stoppableTile.components).toHaveProperty("forEachNode");
 
-      expect(toSimpleString(stoppableTile.components)).toMatchInlineSnapshot(
-        '"1(0,1 0,0)->0(-1,1 1,1)"'
-      );
+      expect(
+        graphtoSimpleString(stoppableTile.components)
+      ).toMatchInlineSnapshot('"1(0,1 0,0)->0(-1,1 1,1)"');
     });
 
     it("should return multiple analysed tiles in a rect", () => {
@@ -378,25 +377,33 @@ describe("DashEngine", () => {
         isWall: false,
         numberOfDashesPassingOver: 0,
       });
-      expect(toSimpleString(analysedTile.components)).toMatchInlineSnapshot(
-        '"0(0,0)"'
-      );
+      expect(
+        graphtoSimpleString(analysedTile.components)
+      ).toMatchInlineSnapshot('"0(0,0)"');
+    });
+
+    it("should report a fixable score for the center tile", () => {
+      const analysedTile = dashEngine.analyseRect({
+        x: 1,
+        y: 0,
+        width: 1,
+        height: 1,
+      });
+
+      expect(analysedTile.rect[0]).toMatchObject({
+        canCollide: true,
+        canStop: false,
+        componentId: null,
+        isWall: true,
+        numberOfDashesPassingOver: 0,
+        x: 1,
+        y: 0,
+        fixScore: 0.5,
+      });
     });
   });
 
   it("should analyse the map, and return detailed info about each tile", () => {
-    /*
-    a wall: if you walk into it, you stop
-    a floor: if you walk into it, you continue to walk in the same direction
-    a direction: a unit-length vector in one of the cardinal directions
-
-    to collide: to impact with a wall
-    to dash: to walk from a tile to another
-    to stop: to be able go from moving to standing still on a tile
-    to reach: to be able to be at a tile
-    to walk: to move from one tile to another
-    */
-
     const dashEngine = new DashEngine({ spawnPoint: { x: -1, y: -1 } });
 
     dashEngine.fillRandom(
@@ -404,6 +411,15 @@ describe("DashEngine", () => {
       undefined,
       "1"
     );
+
+    expect(dashEngine.getRectAsString({ x: -2, y: -2, width: 5, height: 5 }))
+      .toMatchInlineSnapshot(`
+        "#####
+        #..##
+        #.###
+        ##..#
+        #####"
+      `);
 
     const { rect } = dashEngine.analyseRect({
       x: -1,
@@ -436,11 +452,181 @@ describe("DashEngine", () => {
     expect(spawnPoint.isWall).toBe(false);
     expect(spawnPoint.canStop).toBe(true);
     expect(spawnPoint.canCollide).toBe(false);
+  });
 
+  describe("suggestFixes", () => {
+    const dashEngine = new DashEngine();
+    dashEngine.fillWallAt({ x: 0, y: 0, width: 1, height: 2 }, false);
+    dashEngine.fillWallAt({ x: -1, y: 1, width: 3, height: 1 }, false);
 
-    // expect(p.canReach).toBe(true);
-    // expect(p.componentId).toBe(0);
-    // expect(p.numberOfDashesPassingOver).toBe(4);
-    // expect(p).toStrictEqual(analysedMap[0]);
+    it("should return a list of tiles to edit", () => {
+      expect(dashEngine.getRectAsString({ x: -2, y: -1, width: 5, height: 4 }))
+        .toBe(`#####
+##.##
+#...#
+#####`);
+
+      const fixes = dashEngine.suggestFixes();
+
+      expect(fixes).toMatchInlineSnapshot(`
+        [
+          {
+            "score": 1,
+            "tiles": [
+              {
+                "suggestWall": true,
+                "x": 0,
+                "y": 1,
+              },
+            ],
+          },
+          {
+            "score": 3,
+            "tiles": [
+              {
+                "suggestWall": true,
+                "x": 1,
+                "y": 1,
+              },
+            ],
+          },
+          {
+            "score": 3,
+            "tiles": [
+              {
+                "suggestWall": true,
+                "x": -1,
+                "y": 1,
+              },
+            ],
+          },
+          {
+            "score": 5,
+            "tiles": [
+              {
+                "suggestWall": false,
+                "x": 1,
+                "y": 0,
+              },
+            ],
+          },
+          {
+            "score": 5,
+            "tiles": [
+              {
+                "suggestWall": false,
+                "x": -1,
+                "y": 0,
+              },
+            ],
+          },
+          {
+            "score": -5,
+            "tiles": [
+              {
+                "suggestWall": false,
+                "x": 0,
+                "y": -1,
+              },
+            ],
+          },
+          {
+            "score": 2,
+            "tiles": [
+              {
+                "suggestWall": false,
+                "x": 0,
+                "y": 2,
+              },
+            ],
+          },
+          {
+            "score": 0,
+            "tiles": [
+              {
+                "suggestWall": false,
+                "x": 2,
+                "y": 1,
+              },
+            ],
+          },
+          {
+            "score": -1,
+            "tiles": [
+              {
+                "suggestWall": false,
+                "x": 1,
+                "y": 2,
+              },
+            ],
+          },
+          {
+            "score": -1,
+            "tiles": [
+              {
+                "suggestWall": false,
+                "x": -1,
+                "y": 2,
+              },
+            ],
+          },
+          {
+            "score": 0,
+            "tiles": [
+              {
+                "suggestWall": false,
+                "x": -2,
+                "y": 1,
+              },
+            ],
+          },
+        ]
+      `);
+    });
+  });
+
+  describe("mapScore TODO DELETEME", () => {
+    it("should return a mapScore", () => {
+      const dashEngine = new DashEngine();
+
+      const mapScoreInitial = dashEngine._mapScore();
+
+      dashEngine.fillWallAt({ x: 0, y: 0, width: 1, height: 2 }, false);
+
+      const mapScoreSingleDash = dashEngine._mapScore();
+
+      dashEngine.fillWallAt({ x: -1, y: 1, width: 3, height: 1 }, false);
+
+      const mapScoreTwoComponents = dashEngine._mapScore();
+
+      dashEngine.setWallAt({ x: 1, y: 0 }, false);
+
+      const mapScoreSingleComponent = dashEngine._mapScore();
+
+      expect(
+        dashEngine.getRectAsString({ x: -2, y: -1, width: 5, height: 4 })
+      ).toBe(
+        `#####
+##..#
+#...#
+#####`
+      );
+
+      const shit = {
+        initial: mapScoreInitial,
+        singleDash: mapScoreSingleDash,
+        twoComponents: mapScoreTwoComponents,
+        SingleComponent: mapScoreSingleComponent,
+      };
+
+      expect(shit).toMatchInlineSnapshot(`
+        {
+          "SingleComponent": 5,
+          "initial": 1,
+          "singleDash": 2,
+          "twoComponents": 0,
+        }
+      `);
+    });
   });
 });

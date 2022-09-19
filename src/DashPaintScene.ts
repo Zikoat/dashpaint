@@ -6,7 +6,6 @@ import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
 import { Dir4, Point } from "./Helpers";
-import { runInThisContext } from "vm";
 
 type SwipeExtended = Swipe & {
   up: boolean;
@@ -22,6 +21,7 @@ export class DashPaintScene extends Phaser.Scene {
   tileset!: Phaser.Tilemaps.Tileset;
   connectedComponentsLayer!: Phaser.Tilemaps.TilemapLayer;
   pathLengthColorLayer!: Phaser.Tilemaps.TilemapLayer;
+  fixSuggestionsLayer!: Phaser.Tilemaps.TilemapLayer;
   scoreCounter!: Phaser.GameObjects.Text;
 
   swipe!: SwipeExtended;
@@ -30,8 +30,6 @@ export class DashPaintScene extends Phaser.Scene {
 
   movementDirection = { x: 0, y: 0 };
   tileSize = 8;
-  // maxPathLength = 0;
-  // minPathLength = Infinity;
   mapSize = 40;
   maxScore = 0;
   currentScore = 0;
@@ -39,6 +37,7 @@ export class DashPaintScene extends Phaser.Scene {
   seed: number | undefined = 321;
   paintColor = 0xff44ff;
   ccLayerDefaultAlpha = 0;
+  fixLayerDefaultAlpha = 1;
 
   movementQueue: Point[] = [];
 
@@ -89,17 +88,26 @@ export class DashPaintScene extends Phaser.Scene {
       "pathLengthColorLayer",
       this.tileset
     );
+
+    this.fixSuggestionsLayer = this.map.createBlankLayer(
+      "fixSuggestionsLayer",
+      this.tileset
+    );
+    this.fixSuggestionsLayer.alpha = this.fixLayerDefaultAlpha;
+
     this.connectedComponentsLayer = this.map.createBlankLayer(
       "connectedComponents",
       this.tileset
     );
+
     this.connectedComponentsLayer.alpha = this.ccLayerDefaultAlpha;
-    this.connectedComponentsLayer.depth = 1;
+    this.connectedComponentsLayer.depth = -1;
     this.setDefaultLayer();
 
     this.gui
       .add(this.connectedComponentsLayer, "alpha", 0, 1)
       .name("Show analysis");
+    this.gui.add(this.fixSuggestionsLayer, "alpha", 0, 1).name("Show fixes");
 
     htmlPhaserFunctions.startEdit = () => this.startEdit();
     htmlPhaserFunctions.stopEdit = () => this.stopEdit();
@@ -302,7 +310,9 @@ export class DashPaintScene extends Phaser.Scene {
       }
     }
 
-    this.scoreCounter.text = `dots: ${this.maxScore - this.currentScore}`;
+    this.scoreCounter.text = `dots: ${
+      this.maxScore - this.currentScore
+    }, map score: ${this.dashEngine._mapScore()}`;
   }
 
   enqueueMovement(direction: Dir4) {
@@ -416,6 +426,20 @@ export class DashPaintScene extends Phaser.Scene {
     const colorScale = chroma.scale(["green", "yellow", "red"]);
     colorScale.domain([1, 4]);
 
+    const fixColorScale = chroma
+      .scale([
+        "#440154",
+        "#482777",
+        "#3f4a8a",
+        "#31678e",
+        "#26838f",
+        "#1f9d8a",
+        "#6cce5a",
+        "#b6de2b",
+        "#fee825",
+      ])
+      .domain([0.5, 1]);
+
     analysedRect.forEach((analysedTile) => {
       const tile = this.layer.getTileAt(
         analysedTile.x,
@@ -432,25 +456,32 @@ export class DashPaintScene extends Phaser.Scene {
       );
       assert(ccTile);
 
+      const fixTile = this.fixSuggestionsLayer.getTileAt(
+        analysedTile.x,
+        analysedTile.y,
+        true
+      );
+
+      assert(fixTile);
+
       ccTile.index = 0;
       ccTile.tint = 0xffffff;
       tile.index = 0;
       tile.tint = 0xffffff;
+      fixTile.index = 0;
+      fixTile.tint = 0xffffff;
 
       if (analysedTile.isWall && analysedTile.canCollide) {
         tile.index = 2;
       } else if (analysedTile.isWall) {
-        ccTile.index = 2;
-        ccTile.tint = 0xffffff;
-        tile.index = 0;
+        tile.index = 2;
       } else {
         tile.index = 0;
-        tile.tint = 0xffffff;
       }
 
       if (analysedTile.numberOfDashesPassingOver >= 1) {
         ccTile.index = 17;
-        ccTile.tint = colorScale(analysedTile.numberOfDashesPassingOver).num();
+        // ccTile.tint = colorScale(analysedTile.numberOfDashesPassingOver).num();
 
         this.maxScore++;
       }
@@ -461,6 +492,11 @@ export class DashPaintScene extends Phaser.Scene {
 
         ccTile.index = 2;
         ccTile.tint = Number(color.replace("#", "0x"));
+        // ccTile.tint = 0x888888;
+      }
+      if (analysedTile.fixScore) {
+        fixTile.index = 1;
+        fixTile.tint = fixColorScale(analysedTile.fixScore).num();
       }
     });
 

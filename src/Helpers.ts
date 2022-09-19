@@ -65,7 +65,7 @@ export type Point = { x: number; y: number };
 export type Rect = Point & { width: number; height: number };
 export type Dir4 = "up" | "down" | "left" | "right";
 
-export function toSimpleString(graph: Graph): string {
+export function graphtoSimpleString(graph: Graph): string {
   let output = "";
 
   graph.forEachNode((node) => {
@@ -83,6 +83,10 @@ export function toSimpleString(graph: Graph): string {
   });
 
   return output.trim();
+}
+
+export function pathToSimpleString(path: Node<unknown>[]) {
+  return path.map((node) => node.id).join("->");
 }
 
 function nodeToSimpleString(node: Node): string {
@@ -122,4 +126,22 @@ export function isInRect(point: Point, rect: Rect) {
 export function pointInRectToIndex(point: Point, rect: Rect) {
   if (!isInRect(point, rect)) throw Error("point is outside rect");
   return rect.width * (point.y - rect.y) + point.x - rect.x;
+}
+
+// stolen from https://gist.github.com/xposedbones/75ebaef3c10060a3ee3b246166caab56
+function clamp(input: number, min: number, max: number): number {
+  return input < min ? min : input > max ? max : input;
+}
+
+export function mapRange(
+  current: number,
+  inMin: number,
+  inMax: number,
+  outMin: number,
+  outMax: number
+): number {
+  if (inMax === inMin) return (outMax + outMin) / 2;
+  const mapped: number =
+    ((current - inMin) * (outMax - outMin)) / (inMax - inMin) + outMin;
+  return clamp(mapped, outMin, outMax);
 }

@@ -10,14 +10,17 @@ import {
   Rect,
   scaleVector,
   subtractVectors,
-  toSimpleString,
+  graphtoSimpleString,
   vectorLength,
+  mapRange,
 } from "./Helpers";
 import { MapStorage } from "./MapStorage";
 import seedrandom from "seedrandom";
 import createGraph, { Graph, Link, Node, NodeId } from "ngraph.graph";
 import assert from "assert";
 import { findScc } from "./graphHelpers";
+import { MyPathFinder } from "./PathFinder";
+import { median } from "mathjs";
 
 export interface DashEngineOptions {
   spawnPoint?: Point;
@@ -44,15 +47,15 @@ export class DashEngine {
     this.setWallAt(spawnPoint, false);
   }
 
-  setWallAt(point: Point, isCollidable: boolean) {
-    const collidableNumber = isCollidable ? 2 : 1;
+  setWallAt(point: Point, isWall: boolean) {
+    const wallNumber = isWall ? 2 : 1;
 
-    this.mapStorage.setAt(point, collidableNumber);
+    this.mapStorage.setAt(point, wallNumber);
   }
 
-  fillWallAt(rect: Rect, collidable: boolean) {
+  fillWallAt(rect: Rect, isWall: boolean) {
     this.forEachTileInRect(rect, (tile) => {
-      this.setWallAt(tile, collidable);
+      this.setWallAt(tile, isWall);
     });
   }
 
@@ -60,17 +63,17 @@ export class DashEngine {
     const random = seedrandom(seed);
 
     this.forEachTileInRect(rect, (tile) => {
-      const isCollidable = random() > probability;
+      const isWall = random() > probability;
 
-      this.setWallAt(tile, isCollidable);
+      this.setWallAt(tile, isWall);
     });
   }
 
   getWallAt(point: Point): boolean {
-    const collidableNumber = this.mapStorage.getAt(point);
-    const collidable = collidableNumber === null || collidableNumber === 2;
+    const wallNumber = this.mapStorage.getAt(point);
+    const isWall = wallNumber === null || wallNumber === 2;
 
-    return collidable;
+    return isWall;
   }
 
   dash(direction: Dir4): Point {
@@ -137,11 +140,11 @@ export class DashEngine {
     const graph = this.createMapGraph(this.spawnPoint);
     const components = findScc(graph);
 
-    this.forEachTileInRect(rect, (tile) => {
-      const analysedTile = this.analyzePoint(tile, graph, components);
+    const fixes = this.mapFixScores(this.suggestFixes(graph));
 
-      // todo activeta post condition check
-      // this.verifyAnalysedTilePostConditions(analysedTile)
+    this.forEachTileInRect(rect, (tile) => {
+      const analysedTile = this.analysePoint(tile, graph, components, fixes);
+
       analysedRect.push(analysedTile);
     });
 
@@ -157,6 +160,7 @@ export class DashEngine {
           if (!tile) {
             throw Error("not defined tile");
           }
+
           tile.numberOfDashesPassingOver++;
         }
       });
@@ -164,13 +168,18 @@ export class DashEngine {
 
     if (components === null) throw Error("Components is null");
 
+    for (const analysedTile of analysedRect) {
+      this.verifyAnalysedTilePostConditions(analysedTile);
+    }
+
     return { rect: analysedRect, components };
   }
 
-  analyzePoint(
-    pointToAnalyze: Point,
+  analysePoint(
+    pointToAnalyse: Point,
     graph = this.createMapGraph(this.spawnPoint),
-    components = findScc(graph)
+    components = findScc(graph),
+    fixes = this.suggestFixes(graph)
   ): AnalysedTile {
     let isWall;
     let canCollide = false;
@@ -178,23 +187,23 @@ export class DashEngine {
     let numberOfDashesPassingOver = 0;
     let componentId: number | null = null;
 
-    const node = graph.getNode(this.pointToString(pointToAnalyze));
+    const node = graph.getNode(this.pointToString(pointToAnalyse));
     if (node === undefined) {
       canStop = false;
     } else {
       canStop = true;
     }
 
-    isWall = this.getWallAt(pointToAnalyze);
+    isWall = this.getWallAt(pointToAnalyse);
 
     if (graph.getNodesCount() === 1) {
       this.forEachNeighbor(this.spawnPoint, (neighbor) => {
-        if (isEqual(neighbor, pointToAnalyze)) {
+        if (isEqual(neighbor, pointToAnalyse)) {
           canCollide = true;
         }
       });
     } else if (isWall) {
-      this.forEachNeighbor(pointToAnalyze, (neighborPosition, neighbor) => {
+      this.forEachNeighbor(pointToAnalyse, (neighborPosition, neighbor) => {
         graph.forEachLinkedNode(
           this.pointToString(neighborPosition),
           (node, link) => {
@@ -229,7 +238,7 @@ export class DashEngine {
     }
 
     components.forEachNode((node) => {
-      if (node.data.includes(this.pointToString(pointToAnalyze))) {
+      if (node.data.includes(this.pointToString(pointToAnalyse))) {
         if (componentId !== null) throw Error("bug");
         if (typeof node.id === "string") throw Error("bug");
 
@@ -237,14 +246,21 @@ export class DashEngine {
       }
     });
 
+    const fixIndex = fixes.findIndex((fix) =>
+      fix.tiles.some((tile) => isEqual(tile, pointToAnalyse))
+    );
+
+    const fixScore = fixes[fixIndex]?.score ?? null;
+
     return {
       isWall,
       canStop,
       canCollide,
       numberOfDashesPassingOver,
       componentId,
-      x: pointToAnalyze.x,
-      y: pointToAnalyze.y,
+      x: pointToAnalyse.x,
+      y: pointToAnalyse.y,
+      fixScore,
     };
   }
 
@@ -266,7 +282,7 @@ export class DashEngine {
     while ((currentVertex = stack.pop())) {
       const position = this.stringToPoint(currentVertex);
 
-      const neighbors = this.getNeighbors(position).map(this.pointToString);
+      const neighbors = this.getDashNeighbors(position).map(this.pointToString);
 
       for (const neighbor of neighbors) {
         graph.addLink(currentVertex, neighbor);
@@ -335,11 +351,11 @@ export class DashEngine {
     return parsedPoint;
   }
 
-  private getNeighbors(point: Point): Point[] {
+  private getDashNeighbors(point: Point): Point[] {
     const neighbors: Point[] = [];
 
     this.forEachNeighbor(ORIGIN, (_neighbor, direction) => {
-      const neighbor = this.getFirstCollidableInDirection(point, direction);
+      const neighbor = this.getFirstWallInDirection(point, direction);
 
       if (neighbor.x !== point.x || neighbor.y !== point.y) {
         neighbors.push(neighbor);
@@ -349,19 +365,17 @@ export class DashEngine {
     return neighbors;
   }
 
-  private getFirstCollidableInDirection(point: Point, direction: Point): Point {
+  private getFirstWallInDirection(point: Point, direction: Point): Point {
     let currentPosition = {
       x: point.x,
       y: point.y,
     };
 
-    let positionIsCollidable = this.getWallAt(
-      addVectors(currentPosition, direction)
-    );
+    let positionIsWall = this.getWallAt(addVectors(currentPosition, direction));
 
     let pathLength = 1;
 
-    while (!positionIsCollidable) {
+    while (!positionIsWall) {
       pathLength++;
 
       const maxAllowedPathLength = 100;
@@ -372,9 +386,7 @@ export class DashEngine {
 
       currentPosition = addVectors(currentPosition, direction);
 
-      positionIsCollidable = this.getWallAt(
-        addVectors(currentPosition, direction)
-      );
+      positionIsWall = this.getWallAt(addVectors(currentPosition, direction));
     }
 
     return currentPosition;
@@ -398,14 +410,137 @@ export class DashEngine {
 
     if (tile.canStop) {
       assert(!tile.isWall);
-      assert(tile.numberOfDashesPassingOver >= 2);
-      assert(tile.componentId);
-      assert(tile.componentId > 0);
+      if (
+        isEqual(tile, this.spawnPoint) &&
+        this.getDashNeighbors(tile).length === 0
+      ) {
+        assert(tile.numberOfDashesPassingOver === 0);
+      } else {
+        assert(tile.numberOfDashesPassingOver >= 0);
+      }
+      assert(tile.componentId !== null);
+      assert(tile.componentId >= 0);
     } else {
       assert(tile.componentId === null);
     }
   }
+
+  suggestFixes(graph?: Graph<string>): Fix[] {
+    const fixes: Fix[] = [];
+
+    graph ??= this.createMapGraph(this.spawnPoint);
+
+    const interestingTiles: Point[] = [];
+    graph.forEachLink((link) => {
+      const dash = this.linkToDash(link);
+
+      this.forEachPointInDash(dash, (point) => {
+        interestingTiles.push(point);
+      });
+    });
+
+    graph.forEachNode((node) => {
+      this.forEachNeighbor(this.nodeToPoint(node), (neighbor) => {
+        interestingTiles.push(neighbor);
+      });
+    });
+
+    const interestingTilesSet: Set<string> = new Set([
+      ...interestingTiles.map(this.pointToString),
+    ]);
+
+    for (const tile of interestingTilesSet) {
+      const point = this.stringToPoint(tile);
+      if (!isEqual(point, this.spawnPoint)) {
+        const isWall = this.getWallAt(point);
+        this.setWallAt(point, !isWall);
+        const score = this._mapScore();
+        this.setWallAt(point, isWall);
+
+        fixes.push({
+          score: score,
+          tiles: [{ ...point, suggestWall: !isWall }],
+        });
+      }
+    }
+
+    return fixes;
+  }
+
+  _mapScore(): number {
+    const graph = this.createMapGraph(this.spawnPoint);
+
+    let score = 0;
+
+    const scc = findScc(graph);
+
+    const componentPathFinder = new MyPathFinder(scc);
+    const spawnPointNodeId = this.pointToString(this.spawnPoint);
+    type ComponentId = NodeId;
+
+    const componentScores: Record<
+      ComponentId,
+      { componentDistanceToSpawn: number; tileCount: number }
+    > = {};
+
+    let spawnPointComponentId: NodeId = null as unknown as NodeId;
+
+    scc.forEachNode((component) => {
+      if (component.data.includes(spawnPointNodeId)) {
+        spawnPointComponentId = component.id;
+      }
+    });
+
+    if (spawnPointComponentId === null)
+      throw new Error("spawn point component not found");
+
+    scc.forEachNode((component) => {
+      const tileCount = component.data.length;
+
+      const componentDistanceToSpawn = componentPathFinder.find(
+        spawnPointComponentId,
+        component.id
+      ).length;
+
+      componentScores[component.id] = { tileCount, componentDistanceToSpawn };
+      // map 0-* to *-1, this means componentDistanceScale is
+      let componentDistancePoints = null;
+
+      if (componentDistanceToSpawn === 0)
+        componentDistancePoints = scc.getNodesCount() > 1 ? 1 : 0;
+      else componentDistancePoints = -(componentDistanceToSpawn - 1) * 1;
+
+      score += tileCount * componentDistancePoints;
+    });
+
+    return score / scc.getNodesCount();
+  }
+
+  private mapFixScores(fixes: Fix[]): Fix[] {
+    let scores = fixes.map((fix) => fix.score);
+
+    const medianScore = median(...scores);
+    console.log("median score", medianScore);
+
+    const filteredFixes = fixes.filter((fix) => fix.score > medianScore);
+
+    scores = filteredFixes.map((fix) => fix.score);
+    const maxFixScore = Math.max(...scores);
+    const minFixScore = Math.min(...scores);
+
+    const mappedFixes = fixes.map((fix) => {
+      return {
+        score: mapRange(fix.score, minFixScore, maxFixScore, 0, 1),
+        tiles: fix.tiles,
+      };
+    });
+
+    return mappedFixes;
+  }
+  graphToSimpleString = graphtoSimpleString;
 }
+
+type Fix = { score: number; tiles: (Point & { suggestWall: boolean })[] };
 
 export type AnalysedTile = {
   isWall: boolean;
@@ -413,4 +548,5 @@ export type AnalysedTile = {
   canStop: boolean;
   numberOfDashesPassingOver: number;
   componentId: number | null;
+  fixScore: number | null;
 } & Point;
