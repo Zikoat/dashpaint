@@ -49,10 +49,10 @@ describe("DashEngine", () => {
     );
   });
 
-  it("should fill an area as collidable", () => {
+  it("should fill an area as wall", () => {
     const dashEngine = new DashEngine();
 
-    dashEngine.fillCollidableAt({ x: -1, y: -1, width: 3, height: 3 }, false);
+    dashEngine.fillWallAt({ x: -1, y: -1, width: 3, height: 3 }, false);
 
     const map = dashEngine.getRectAsString({
       x: -2,
@@ -168,7 +168,7 @@ describe("DashEngine", () => {
 
   describe("map with single dash", () => {
     const dashEngine = new DashEngine();
-    dashEngine.fillCollidableAt({ x: 0, y: 0, width: 3, height: 1 }, false);
+    dashEngine.fillWallAt({ x: 0, y: 0, width: 3, height: 1 }, false);
 
     it("should match string", () => {
       const map = dashEngine.getRectAsString({
@@ -236,8 +236,8 @@ describe("DashEngine", () => {
 
   describe("map with 2 components", () => {
     const dashEngine = new DashEngine();
-    dashEngine.fillCollidableAt({ x: 0, y: 0, width: 1, height: 2 }, false);
-    dashEngine.fillCollidableAt({ x: -1, y: 1, width: 3, height: 1 }, false);
+    dashEngine.fillWallAt({ x: 0, y: 0, width: 1, height: 2 }, false);
+    dashEngine.fillWallAt({ x: -1, y: 1, width: 3, height: 1 }, false);
 
     it("should match string", () => {
       const map = dashEngine.getRectAsString({

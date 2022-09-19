@@ -163,7 +163,7 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   resetGame() {
-    this.dashEngine.fillCollidableAt(
+    this.dashEngine.fillWallAt(
       { x: 0, y: 0, width: this.mapSize, height: this.mapSize },
       true
     );
@@ -177,7 +177,7 @@ export class DashPaintScene extends Phaser.Scene {
       0.65,
       this.seed?.toString()
     );
-    this.dashEngine.fillCollidableAt(
+    this.dashEngine.fillWallAt(
       {
         x: this.dashEngine.spawnPoint.x,
         y: this.dashEngine.spawnPoint.y,

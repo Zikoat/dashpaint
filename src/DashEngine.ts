@@ -50,7 +50,7 @@ export class DashEngine {
     this.mapStorage.setAt(point, collidableNumber);
   }
 
-  fillCollidableAt(rect: Rect, collidable: boolean) {
+  fillWallAt(rect: Rect, collidable: boolean) {
     this.forEachTileInRect(rect, (tile) => {
       this.setWallAt(tile, collidable);
     });
