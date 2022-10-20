@@ -8,7 +8,7 @@ export const DashPaintConfig: Phaser.Types.Core.GameConfig = {
   height: window.innerHeight,
   parent: "phaser-container",
   pixelArt: true,
-  backgroundColor: "#000000",
+  backgroundColor: "#ffffff",
   scene: [DashPaintScene],
   
 };

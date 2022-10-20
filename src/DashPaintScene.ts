@@ -101,7 +101,7 @@ export class DashPaintScene extends Phaser.Scene {
     );
 
     this.connectedComponentsLayer.alpha = this.ccLayerDefaultAlpha;
-    this.connectedComponentsLayer.depth = -1;
+    this.connectedComponentsLayer.depth = 1;
     this.setDefaultLayer();
 
     this.gui
@@ -150,7 +150,7 @@ export class DashPaintScene extends Phaser.Scene {
     });
 
     this.scoreCounter = this.add.text(0, -15, "test", {
-      color: "white",
+      color: "black",
       fontStyle: "strong",
       resolution: 10,
     });
@@ -303,8 +303,8 @@ export class DashPaintScene extends Phaser.Scene {
         this.getPlayerPosition().x,
         this.getPlayerPosition().y
       );
-      if (currentTile.index === 0) {
-        currentTile.index = 2;
+
+      if (currentTile.tint === 0) {
         currentTile.tint = this.paintColor;
         this.currentScore++;
       }
@@ -475,8 +475,9 @@ export class DashPaintScene extends Phaser.Scene {
         tile.index = 2;
       } else if (analysedTile.isWall) {
         tile.index = 2;
-      } else {
-        tile.index = 0;
+      } else if (analysedTile.numberOfDashesPassingOver > 0) {
+        tile.index = 2;
+        tile.tint = 0;
       }
 
       if (analysedTile.numberOfDashesPassingOver >= 1) {
