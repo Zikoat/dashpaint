@@ -507,7 +507,7 @@ export class DashEngine {
       let componentDistancePoints = null;
 
       if (componentDistanceToSpawn === 0)
-        componentDistancePoints = scc.getNodesCount() > 1 ? 1 : 0;
+        componentDistancePoints = scc.getNodesCount() > 1 ? 1 : 1;
       else componentDistancePoints = -(componentDistanceToSpawn - 1) * 1;
 
       score += tileCount * componentDistancePoints;
