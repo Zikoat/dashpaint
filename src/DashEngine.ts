@@ -520,7 +520,7 @@ export class DashEngine {
     let scores = fixes.map((fix) => fix.score);
 
     const medianScore = median(...scores);
-    console.log("median score", medianScore);
+    // console.log("median score", medianScore);
 
     const filteredFixes = fixes.filter((fix) => fix.score > medianScore);
 
@@ -537,7 +537,65 @@ export class DashEngine {
 
     return mappedFixes;
   }
+
   graphToSimpleString = graphtoSimpleString;
+
+  public generateMap(mapSize: number, seed?: number) {
+    this.fillWallAt({ x: 0, y: 0, width: mapSize, height: mapSize }, true);
+    this.fillRandom(
+      {
+        x: 1,
+        y: 1,
+        width: mapSize - 2,
+        height: mapSize - 2,
+      },
+      0.65,
+      seed?.toString()
+    );
+    this.fillWallAt(
+      {
+        x: this.spawnPoint.x,
+        y: this.spawnPoint.y,
+        width: 2,
+        height: 1,
+      },
+      false
+    );
+
+    let i = 0;
+    let components = this.getComponentCount();
+    if (components < 1) throw Error("there are 0 components");
+
+    while (components > 1 && i < 10) {
+      i++;
+      components = this.getComponentCount();
+      console.log(components);
+      this.applyBestFix();
+    }
+
+    for (let i = 0; i < 3; i++) {
+      console.log('applying best fix')
+      this.applyBestFix();
+    }
+  }
+
+  applyBestFix() {
+    const fixes = this.suggestFixes();
+    const fixesNumbers = fixes.map((fix) => fix.score);
+    const bestFix = fixes[fixesNumbers.indexOf(Math.max(...fixesNumbers))];
+    if (bestFix === undefined) throw Error("No fixes returned");
+
+    for (const fix of bestFix.tiles) {
+      this.setWallAt(fix, fix.suggestWall);
+    }
+  }
+
+  getComponentCount() {
+    const graph = this.createMapGraph(this.spawnPoint);
+    const scc = findScc(graph);
+    const components = scc.getNodeCount();
+    return components;
+  }
 }
 
 type Fix = { score: number; tiles: (Point & { suggestWall: boolean })[] };

@@ -30,14 +30,14 @@ export class DashPaintScene extends Phaser.Scene {
 
   movementDirection = { x: 0, y: 0 };
   tileSize = 8;
-  mapSize = 40;
+  mapSize = 20;
   maxScore = 0;
   currentScore = 0;
   zoom = 3;
   seed: number | undefined = 321;
   paintColor = 0xff44ff;
   ccLayerDefaultAlpha = 0;
-  fixLayerDefaultAlpha = 1;
+  fixLayerDefaultAlpha = 0;
 
   movementQueue: Point[] = [];
 
@@ -171,29 +171,7 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   resetGame() {
-    this.dashEngine.fillWallAt(
-      { x: 0, y: 0, width: this.mapSize, height: this.mapSize },
-      true
-    );
-    this.dashEngine.fillRandom(
-      {
-        x: 1,
-        y: 1,
-        width: this.mapSize - 2,
-        height: this.mapSize - 2,
-      },
-      0.65,
-      this.seed?.toString()
-    );
-    this.dashEngine.fillWallAt(
-      {
-        x: this.dashEngine.spawnPoint.x,
-        y: this.dashEngine.spawnPoint.y,
-        width: 2,
-        height: 1,
-      },
-      false
-    );
+    this.dashEngine.generateMap(this.mapSize, this.seed);
 
     this.dashEngine.forEachTileInRect(
       { x: 0, y: 0, width: this.mapSize, height: this.mapSize },
@@ -309,10 +287,14 @@ export class DashPaintScene extends Phaser.Scene {
         this.currentScore++;
       }
     }
-
-    this.scoreCounter.text = `dots: ${
+    // map size: ${this.dashEngine._mapScore()},
+    const canGetStuckText =
+      this.dashEngine.getComponentCount() === 1
+        ? ""
+        : ", warning: you can get stuck";
+    this.scoreCounter.text = `paint left: ${
       this.maxScore - this.currentScore
-    }, map score: ${this.dashEngine._mapScore()}`;
+    }${canGetStuckText}`;
   }
 
   enqueueMovement(direction: Dir4) {

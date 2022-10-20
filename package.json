@@ -6,7 +6,7 @@
     "build": "next build && next export",
     "start": "bun i && next",
     "ci": "bun run build && mv out/dashpaint/images/ out/images/",
-    "test": "vitest -w --sequence.shuffle"
+    "test": "vitest -w --sequence.shuffle "
   },
   "devDependencies": {
     "@types/chroma-js": "^2.1.4",
