@@ -1,4 +1,4 @@
-import createGraph, {  } from "ngraph.graph";
+import createGraph from "ngraph.graph";
 import { describe, expect, it } from "vitest";
 import { adjacencyListToGraph, findScc } from "./graphHelpers";
 import {
@@ -78,22 +78,6 @@ describe("Graph", () => {
     });
   });
 
-  describe("Connected components", () => {
-    it("it should find connected components in a simple graph", () => {
-      const graph = createGraph();
-
-      graph.addLink("a", "b");
-      graph.addLink("b", "a");
-      graph.addLink("b", "c");
-
-      const connectedComponents = findScc(graph);
-
-      expect(graphtoSimpleString(connectedComponents)).toMatchInlineSnapshot(
-        '"1(b a)->0(c)"'
-      );
-    });
-  });
-
   describe.each([{ type: MyPathFinder, name: "MyPathFinder" }])(
     "pathfinder $name",
     () => {
@@ -151,6 +135,66 @@ describe("Graph", () => {
       });
     }
   );
+
+  it("deletes the edges connected to a node if the node is deleted", () => {
+    const g = createGraph();
+    g.addLink(1, 2);
+    expect(g.getLinksCount()).toBe(1);
+    expect(g.getNodesCount()).toBe(2);
+    const wasRemoved = g.removeNode(1);
+    expect(wasRemoved).toBe(true);
+    expect(g.getLinksCount()).toBe(0);
+    expect(g.getNodesCount()).toBe(1);
+  });
+});
+
+describe("Connected components", () => {
+  it("should find connected components in a simple graph", () => {
+    const graph = createGraph();
+
+    graph.addLink("a", "b");
+    graph.addLink("b", "a");
+    graph.addLink("b", "c");
+
+    const connectedComponents = findScc(graph);
+
+    expect(graphtoSimpleString(connectedComponents)).toMatchInlineSnapshot(
+      '"1(b a)->0(c)"'
+    );
+  });
+
+  it("works when there are disconnected components in the graph", () => {
+    const graph = createGraph();
+
+    graph.addLink("a", "b");
+    graph.addLink("b", "a");
+    graph.addLink("b", "c");
+    graph.addLink("d", "e");
+    graph.addLink("e", "d");
+
+    const connectedComponents = findScc(graph);
+
+    expect(graphtoSimpleString(connectedComponents)).toMatchInlineSnapshot(
+      `
+      "2(e d)
+      1(b a)->0(c)"
+    `
+    );
+  });
+
+  it("returns a single node if there is only 1 node", () => {
+    const graph = createGraph();
+
+    graph.addNode("a");
+
+    const connectedComponents = findScc(graph);
+
+    expect(graphtoSimpleString(connectedComponents)).toMatchInlineSnapshot(
+      '"0(a)"'
+    );
+  });
+
+  it.todo("move this to its own unit test file")
 });
 
 describe("Vectors", () => {

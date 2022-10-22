@@ -388,7 +388,7 @@ describe("DashEngine", () => {
       ).toMatchInlineSnapshot('"0(0,0)"');
     });
 
-    it.skip("should report a fixable score for the center tile", () => {
+    it("should report a fixable score for the center tile", () => {
       const analysedTile = dashEngine.analyseRect({
         x: 1,
         y: 0,
@@ -465,7 +465,7 @@ describe("DashEngine", () => {
     dashEngine.fillWallAt({ x: 0, y: 0, width: 1, height: 2 }, false);
     dashEngine.fillWallAt({ x: -1, y: 1, width: 3, height: 1 }, false);
 
-    it.skip("should return a list of tiles to edit", () => {
+    it("should return a list of tiles to edit", () => {
       expect(dashEngine.getRectAsString({ x: -2, y: -1, width: 5, height: 4 }))
         .toBe(`#####
 ##.##
@@ -527,7 +527,7 @@ describe("DashEngine", () => {
             ],
           },
           {
-            "score": -5,
+            "score": -1.6666666666666667,
             "tiles": [
               {
                 "suggestWall": false,
@@ -557,7 +557,7 @@ describe("DashEngine", () => {
             ],
           },
           {
-            "score": -1,
+            "score": -0.5,
             "tiles": [
               {
                 "suggestWall": false,
@@ -567,7 +567,7 @@ describe("DashEngine", () => {
             ],
           },
           {
-            "score": -1,
+            "score": -0.5,
             "tiles": [
               {
                 "suggestWall": false,
@@ -592,7 +592,7 @@ describe("DashEngine", () => {
   });
 
   describe("mapScore TODO DELETEME", () => {
-    it.skip("should return a mapScore", () => {
+    it("should return a mapScore", () => {
       const dashEngine = new DashEngine();
 
       const mapScoreInitial = dashEngine._mapScore();
@@ -626,30 +626,17 @@ describe("DashEngine", () => {
       };
 
       expect(shit).toMatchInlineSnapshot(`
-      "#####
-      #..##
-      ##.##
-      #####
-      #####"
-    `);
+        {
+          "SingleComponent": 5,
+          "initial": 1,
+          "singleDash": 2,
+          "twoComponents": 0,
+        }
+      `);
     });
+    it.todo("sigurd should move this to its own test file, and maybe make it into its own class")
   });
-});
-
-describe("Generator", () => {
-  it("should generate a map with component count 1", () => {
-    const dashengine = new DashEngine();
-    const mapsize = 7;
-    dashengine.generateMap(mapsize, 11);
-
-    expect(
-      "\n" +
-        dashengine.getRectAsString({
-          x: -1,
-          y: -1,
-          width: mapsize + 1,
-          height: mapsize + 1,
-        })
-    ).toMatchInlineSnapshot(`shit`);
-  });
+  
+  it.todo("creates a map from a string")
+  it.todo('sigurd should move the fixer into its own class')
 });

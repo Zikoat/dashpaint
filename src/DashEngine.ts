@@ -137,18 +137,18 @@ export class DashEngine {
     components: Graph<NodeId[]>;
   } {
     const analysedRect: AnalysedTile[] = [];
-    const graph = this.createMapGraph(this.spawnPoint);
-    const components = findScc(graph);
+    const dashGraph = this.createDashGraph(this.spawnPoint);
+    const componentGraph = findScc(dashGraph);
 
-    const fixes = this.mapFixScores(this.suggestFixes(graph));
+    const fixes = this.mapFixScores(this.suggestFixes(dashGraph));
 
     this.forEachTileInRect(rect, (tile) => {
-      const analysedTile = this.analysePoint(tile, graph, components, fixes);
+      const analysedTile = this.analysePoint(tile, dashGraph, componentGraph, fixes);
 
       analysedRect.push(analysedTile);
     });
 
-    graph.forEachLink((link) => {
+    dashGraph.forEachLink((link) => {
       const dash = this.linkToDash(link);
 
       this.forEachPointInDash(dash, (pointInDash) => {
@@ -166,20 +166,20 @@ export class DashEngine {
       });
     });
 
-    if (components === null) throw Error("Components is null");
+    if (componentGraph === null) throw Error("Components is null");
 
     for (const analysedTile of analysedRect) {
       this.verifyAnalysedTilePostConditions(analysedTile);
     }
 
-    return { rect: analysedRect, components };
+    return { rect: analysedRect, components: componentGraph };
   }
 
   analysePoint(
     pointToAnalyse: Point,
-    graph = this.createMapGraph(this.spawnPoint),
-    components = findScc(graph),
-    fixes = this.suggestFixes(graph)
+    dashGraph = this.createDashGraph(this.spawnPoint),
+    componentGraph = findScc(dashGraph),
+    fixes = this.suggestFixes(dashGraph)
   ): AnalysedTile {
     let isWall;
     let canCollide = false;
@@ -187,7 +187,7 @@ export class DashEngine {
     let numberOfDashesPassingOver = 0;
     let componentId: number | null = null;
 
-    const node = graph.getNode(this.pointToString(pointToAnalyse));
+    const node = dashGraph.getNode(this.pointToString(pointToAnalyse));
     if (node === undefined) {
       canStop = false;
     } else {
@@ -196,7 +196,7 @@ export class DashEngine {
 
     isWall = this.getWallAt(pointToAnalyse);
 
-    if (graph.getNodesCount() === 1) {
+    if (dashGraph.getNodesCount() === 1) {
       this.forEachNeighbor(this.spawnPoint, (neighbor) => {
         if (isEqual(neighbor, pointToAnalyse)) {
           canCollide = true;
@@ -204,7 +204,7 @@ export class DashEngine {
       });
     } else if (isWall) {
       this.forEachNeighbor(pointToAnalyse, (neighborPosition, neighbor) => {
-        graph.forEachLinkedNode(
+        dashGraph.forEachLinkedNode(
           this.pointToString(neighborPosition),
           (node, link) => {
             const linkedNode = this.nodeToPoint(node);
@@ -225,7 +225,7 @@ export class DashEngine {
           },
           false
         );
-        const canStopOnNeighbor = !!graph.getNode(
+        const canStopOnNeighbor = !!dashGraph.getNode(
           this.pointToString(neighborPosition)
         );
         const oppositeWallOfNeighborIsWall = this.getWallAt(
@@ -237,7 +237,7 @@ export class DashEngine {
       });
     }
 
-    components.forEachNode((node) => {
+    componentGraph.forEachNode((node) => {
       if (node.data.includes(this.pointToString(pointToAnalyse))) {
         if (componentId !== null) throw Error("bug");
         if (typeof node.id === "string") throw Error("bug");
@@ -264,7 +264,7 @@ export class DashEngine {
     };
   }
 
-  private createMapGraph(start: Point) {
+  private createDashGraph(start: Point) {
     if (this.getWallAt(start))
       throw Error(
         `cannot create graph from point ${this.pointToString(start)}`
@@ -425,13 +425,13 @@ export class DashEngine {
     }
   }
 
-  suggestFixes(graph?: Graph<string>): Fix[] {
+  suggestFixes(dashGraph?: Graph<string>): Fix[] {
     const fixes: Fix[] = [];
 
-    graph ??= this.createMapGraph(this.spawnPoint);
+    dashGraph ??= this.createDashGraph(this.spawnPoint);
 
     const interestingTiles: Point[] = [];
-    graph.forEachLink((link) => {
+    dashGraph.forEachLink((link) => {
       const dash = this.linkToDash(link);
 
       this.forEachPointInDash(dash, (point) => {
@@ -439,7 +439,7 @@ export class DashEngine {
       });
     });
 
-    graph.forEachNode((node) => {
+    dashGraph.forEachNode((node) => {
       this.forEachNeighbor(this.nodeToPoint(node), (neighbor) => {
         interestingTiles.push(neighbor);
       });
@@ -468,13 +468,13 @@ export class DashEngine {
   }
 
   _mapScore(): number {
-    const graph = this.createMapGraph(this.spawnPoint);
+    const dashGraph = this.createDashGraph(this.spawnPoint);
 
     let score = 0;
 
-    const scc = findScc(graph);
+    const componentGraph = findScc(dashGraph);
 
-    const componentPathFinder = new MyPathFinder(scc);
+    const componentPathFinder = new MyPathFinder(componentGraph);
     const spawnPointNodeId = this.pointToString(this.spawnPoint);
     type ComponentId = NodeId;
 
@@ -485,7 +485,7 @@ export class DashEngine {
 
     let spawnPointComponentId: NodeId = null as unknown as NodeId;
 
-    scc.forEachNode((component) => {
+    componentGraph.forEachNode((component) => {
       if (component.data.includes(spawnPointNodeId)) {
         spawnPointComponentId = component.id;
       }
@@ -494,7 +494,7 @@ export class DashEngine {
     if (spawnPointComponentId === null)
       throw new Error("spawn point component not found");
 
-    scc.forEachNode((component) => {
+    componentGraph.forEachNode((component) => {
       const tileCount = component.data.length;
 
       const componentDistanceToSpawn = componentPathFinder.find(
@@ -507,13 +507,13 @@ export class DashEngine {
       let componentDistancePoints = null;
 
       if (componentDistanceToSpawn === 0)
-        componentDistancePoints = scc.getNodesCount() > 1 ? 1 : 1;
+        componentDistancePoints = componentGraph.getNodesCount() > 1 ? 1 : 1;
       else componentDistancePoints = -(componentDistanceToSpawn - 1) * 1;
 
       score += tileCount * componentDistancePoints;
     });
 
-    return score / scc.getNodesCount();
+    return score / componentGraph.getNodesCount();
   }
 
   private mapFixScores(fixes: Fix[]): Fix[] {
@@ -522,7 +522,7 @@ export class DashEngine {
     const medianScore = median(...scores);
     // console.log("median score", medianScore);
 
-    const filteredFixes = fixes.filter((fix) => fix.score > medianScore);
+    const filteredFixes = fixes.filter((fix) => fix.score >= medianScore);
 
     scores = filteredFixes.map((fix) => fix.score);
     const maxFixScore = Math.max(...scores);
@@ -591,9 +591,9 @@ export class DashEngine {
   }
 
   getComponentCount() {
-    const graph = this.createMapGraph(this.spawnPoint);
-    const scc = findScc(graph);
-    const components = scc.getNodeCount();
+    const dashGraph = this.createDashGraph(this.spawnPoint);
+    const componentGraph = findScc(dashGraph);
+    const components = componentGraph.getNodeCount();
     return components;
   }
 }
