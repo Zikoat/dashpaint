@@ -103,3 +103,7 @@ export function graphtoSimpleString(graph: Graph): string {
 
   return output.trim();
 }
+
+export function pathToSimpleString(path: Node[]) {
+  return path.map((node) => node.id).join("->");
+}

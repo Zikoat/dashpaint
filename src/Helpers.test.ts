@@ -1,7 +1,11 @@
 import createGraph from "ngraph.graph";
 import { describe, expect, it } from "vitest";
-import { pathToSimpleString } from "./DashHelpers";
-import { adjacencyListToGraph, findScc, graphtoSimpleString } from "./GraphHelpers";
+import {
+  adjacencyListToGraph,
+  findScc,
+  graphtoSimpleString,
+  pathToSimpleString,
+} from "./GraphHelpers";
 import { mapRange } from "./Helpers";
 import { MyPathFinder } from "./PathFinder";
 

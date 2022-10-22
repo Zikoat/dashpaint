@@ -7,6 +7,3 @@ export type Dash = {
 };
 
 
-export function pathToSimpleString(path: Node<unknown>[]) {
-  return path.map((node) => node.id).join("->");
-}

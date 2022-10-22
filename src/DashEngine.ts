@@ -183,7 +183,7 @@ export class DashEngine {
     const neighbors: Point[] = [];
 
     this.forEachNeighbor(ORIGIN, (_neighbor, direction) => {
-      const neighbor = this.getFirstWallInDirection(point, direction);
+      const neighbor = this.moveAlongDash(point, direction);
 
       if (neighbor.x !== point.x || neighbor.y !== point.y) {
         neighbors.push(neighbor);
@@ -193,7 +193,7 @@ export class DashEngine {
     return neighbors;
   }
 
-  private getFirstWallInDirection(point: Point, direction: Point): Point {
+  private moveAlongDash(point: Point, direction: Point): Point {
     let currentPosition = {
       x: point.x,
       y: point.y,
