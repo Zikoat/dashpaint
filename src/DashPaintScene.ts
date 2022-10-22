@@ -129,7 +129,7 @@ export class DashPaintScene extends Phaser.Scene {
       this.enqueueMovement("right");
     });
 
-    this.swipe = new Swipe(this, { dir: "4dir" }) as SwipeExtended;
+    this.swipe = new Swipe(this, {velocityThreshold:200,threshold :5, dir: "4dir" }) as SwipeExtended;
 
     this.tap = new Tap(this, {
       tapInterval: 0,
