@@ -1,19 +1,4 @@
-import {
-  addVectors,
-  Dir4,
-  DIRECTIONS,
-  isEqual,
-  isInRect,
-  normalizeVector,
-  ORIGIN,
-  Point,
-  Rect,
-  scaleVector,
-  subtractVectors,
-  graphtoSimpleString,
-  vectorLength,
-  mapRange,
-} from "./Helpers";
+import { Dir4, DIRECTIONS, mapRange } from "./Helpers";
 import { MapStorage } from "./MapStorage";
 import seedrandom from "seedrandom";
 import createGraph, { Graph, Link, Node, NodeId } from "ngraph.graph";
@@ -21,6 +6,18 @@ import assert from "assert";
 import { findScc } from "./graphHelpers";
 import { MyPathFinder } from "./PathFinder";
 import { median } from "mathjs";
+import {
+  Point,
+  ORIGIN,
+  Rect,
+  addVectors,
+  subtractVectors,
+  normalizeVector,
+  vectorLength,
+  scaleVector,
+  isEqual,
+  isInRect,
+} from "./GeometryHelpers";
 
 export class DashEngine {
   spawnPoint: Point;

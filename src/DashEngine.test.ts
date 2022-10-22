@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AnalysedTile, DashEngine } from "./DashEngine";
-import { ORIGIN, graphtoSimpleString } from "./Helpers";
+import { ORIGIN } from "./GeometryHelpers";
+import {  graphtoSimpleString } from "./Helpers";
 
 describe("DashEngine", () => {
   it("should be instantiated", () => {
@@ -13,7 +14,7 @@ describe("DashEngine", () => {
     expect(dashEngine.playerPosition).toBe(ORIGIN);
   });
 
-  it("should create a map of size n*n, and print it", () => {
+  it.only("should create a map of size n*n, and print it", () => {
     const dashEngine = new DashEngine();
 
     expect(dashEngine.playerPosition).toStrictEqual(ORIGIN);

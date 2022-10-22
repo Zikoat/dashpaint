@@ -1,8 +1,5 @@
 import { Graph, Node } from "ngraph.graph";
 
-export const ORIGIN = { x: 0, y: 0 };
-Object.freeze(ORIGIN);
-
 export const DIRECTIONS = [
   { x: 1, y: 0 },
   { x: 0, y: 1 },
@@ -11,58 +8,6 @@ export const DIRECTIONS = [
 ];
 Object.freeze(DIRECTIONS);
 
-export function addVectors(a: Point, b: Point): Point {
-  return { x: a.x + b.x, y: a.y + b.y };
-}
-
-export function subtractVectors(a: Point, b: Point): Point {
-  return { x: a.x - b.x, y: a.y - b.y };
-}
-
-export function isEqual(a: Point, b: Point): boolean {
-  return a.x === b.x && a.y === b.y;
-}
-
-export function normalizeVector(vector: Point): Point {
-  const normalized = {
-    x: Math.sign(vector.x),
-    y: Math.sign(vector.y),
-  };
-
-  if (Math.abs(normalized.x) + Math.abs(normalized.y) !== 1)
-    throw Error("Non-orthogonal vectors are not allowed");
-
-  return normalized;
-}
-
-export function scaleVector(vector: Point, scalar: number): Point {
-  return {
-    x: vector.x * scalar,
-    y: vector.y * scalar,
-  };
-}
-
-export function vectorLength(vector: Point): number {
-  return Math.abs(vector.x + vector.y);
-}
-
-export function isVector(vector: unknown): vector is Point {
-  return (
-    typeof vector === "object" &&
-    vector !== null &&
-    "x" in vector &&
-    "y" in vector &&
-    typeof (vector as Point).x === "number" &&
-    typeof (vector as Point).y === "number"
-  );
-}
-
-export function floorVector(vector: Point): Point {
-  return { x: Math.floor(vector.x), y: Math.floor(vector.y) };
-}
-
-export type Point = { x: number; y: number };
-export type Rect = Point & { width: number; height: number };
 export type Dir4 = "up" | "down" | "left" | "right";
 
 export function graphtoSimpleString(graph: Graph): string {
@@ -113,20 +58,6 @@ function isObject(obj: unknown): obj is object {
   return typeof obj === "object" && obj !== null;
 }
 
-export function isInRect(point: Point, rect: Rect) {
-  if (rect.width <= 0 || rect.height <= 0) throw Error("rect has no area");
-  return (
-    point.x >= rect.x &&
-    point.y >= rect.y &&
-    point.x < rect.x + rect.width &&
-    point.y < rect.y + rect.height
-  );
-}
-
-export function pointInRectToIndex(point: Point, rect: Rect) {
-  if (!isInRect(point, rect)) throw Error("point is outside rect");
-  return rect.width * (point.y - rect.y) + point.x - rect.x;
-}
 
 // stolen from https://gist.github.com/xposedbones/75ebaef3c10060a3ee3b246166caab56
 function clamp(input: number, min: number, max: number): number {

@@ -1,14 +1,8 @@
 import createGraph from "ngraph.graph";
 import { describe, expect, it } from "vitest";
+import { addVectors, subtractVectors, isEqual, normalizeVector, isVector, isInRect, pointInRectToIndex } from "./GeometryHelpers";
 import { adjacencyListToGraph, findScc } from "./graphHelpers";
 import {
-  addVectors,
-  isEqual,
-  isInRect,
-  isVector,
-  normalizeVector,
-  pointInRectToIndex,
-  subtractVectors,
   graphtoSimpleString,
   pathToSimpleString,
   mapRange,
