@@ -3,7 +3,7 @@ import { MapStorage } from "./MapStorage";
 import seedrandom from "seedrandom";
 import createGraph, { Graph, Link, Node, NodeId } from "ngraph.graph";
 import assert from "assert";
-import { findScc } from "./graphHelpers";
+import { findScc } from "./GraphHelpers";
 import { MyPathFinder } from "./PathFinder";
 import { median } from "mathjs";
 import {
@@ -18,6 +18,7 @@ import {
   isEqual,
   isInRect,
 } from "./GeometryHelpers";
+import { Dash } from "./DashHelpers";
 
 export class DashEngine {
   spawnPoint: Point;
@@ -599,8 +600,10 @@ export class DashEngine {
 
 // types
 
+// fixes
 type Fix = { score: number; tiles: (Point & { suggestWall: boolean })[] };
 
+// analysis
 export type AnalysedTile = {
   isWall: boolean;
   canCollide: boolean;
@@ -610,12 +613,9 @@ export type AnalysedTile = {
   fixScore: number | null;
 } & Point;
 
+// core
 export interface DashEngineOptions {
   spawnPoint?: Point;
   mapStorage?: MapStorage;
 }
 
-type Dash = {
-  from: Point;
-  to: Point;
-};

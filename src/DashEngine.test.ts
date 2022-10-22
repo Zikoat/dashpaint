@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AnalysedTile, DashEngine } from "./DashEngine";
 import { ORIGIN } from "./GeometryHelpers";
-import {  graphtoSimpleString } from "./Helpers";
+import { graphtoSimpleString } from "./GraphHelpers";
 
 describe("DashEngine", () => {
   it("should be instantiated", () => {

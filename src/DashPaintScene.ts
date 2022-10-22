@@ -5,7 +5,8 @@ import { Pinch, Swipe, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
-import { Dir4, Point } from "./Helpers";
+import { Dir4 } from "./Helpers";
+import { Point } from "./GeometryHelpers";
 
 type SwipeExtended = Swipe & {
   up: boolean;
