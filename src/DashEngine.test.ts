@@ -14,7 +14,7 @@ describe("DashEngine", () => {
     expect(dashEngine.playerPosition).toBe(ORIGIN);
   });
 
-  it.only("should create a map of size n*n, and print it", () => {
+  it("should create a map of size n*n, and print it", () => {
     const dashEngine = new DashEngine();
 
     expect(dashEngine.playerPosition).toStrictEqual(ORIGIN);
