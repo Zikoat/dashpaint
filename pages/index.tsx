@@ -6,6 +6,7 @@ import {
   faRotateRight,
 } from "@fortawesome/free-solid-svg-icons";
 import loadingAnimation from "../public/dashpaint/animations/loadingAnimation.gif";
+import Image from "next/image";
 
 const LoadWithoutSSR = dynamic(() => import("../src/ReactGame"), {
   ssr: false,
@@ -106,7 +107,7 @@ export default function DashPaintPage(): JSX.Element {
               left: "50%",
             }}
           >
-            <img
+            <Image
               src={loadingAnimation.src}
               alt="loading..."
               style={{
