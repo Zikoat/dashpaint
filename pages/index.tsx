@@ -1,10 +1,7 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPencil,
-  faRotateRight,
-} from "@fortawesome/free-solid-svg-icons";
+import { faPencil, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import loadingAnimation from "../public/dashpaint/animations/loadingAnimation.gif";
 import Image from "next/image";
 
@@ -108,11 +105,11 @@ export default function DashPaintPage(): JSX.Element {
             }}
           >
             <Image
-              src={loadingAnimation.src}
+              src={loadingAnimation}
               alt="loading..."
+              width={40}
               style={{
                 imageRendering: "pixelated",
-                width: "3rem",
                 height: "3rem",
               }}
             />
