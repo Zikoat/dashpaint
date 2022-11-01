@@ -13,7 +13,6 @@ export class Controls {
 
   pan(pan: { dx: number; dy: number }) {
     const dPan = { x: pan.dx, y: pan.dy };
-    console.log(dPan, this.panPosition);
     this.panPosition = addVectors({ x: pan.dx, y: pan.dy }, this.panPosition);
 
     if (
