@@ -118,16 +118,16 @@ export class DashPaintScene extends Phaser.Scene {
     };
 
     this.input.keyboard.on("keydown-UP", () => {
-      this.enqueueMovement("up");
+      this.enqueueMovement("up", this.movementQueue);
     });
     this.input.keyboard.on("keydown-DOWN", () => {
-      this.enqueueMovement("down");
+      this.enqueueMovement("down", this.movementQueue);
     });
     this.input.keyboard.on("keydown-LEFT", () => {
-      this.enqueueMovement("left");
+      this.enqueueMovement("left", this.movementQueue);
     });
     this.input.keyboard.on("keydown-RIGHT", () => {
-      this.enqueueMovement("right");
+      this.enqueueMovement("right", this.movementQueue);
     });
 
     this.swipe = new Swipe(this, {velocityThreshold:200,threshold :5, dir: "4dir" }) as SwipeExtended;
@@ -248,10 +248,10 @@ export class DashPaintScene extends Phaser.Scene {
     if (!htmlPhaserFunctions.isEditing) {
       if (this.swipe.isSwiped) {
         console.log("swiped");
-        if (this.swipe.left) this.enqueueMovement("left");
-        else if (this.swipe.right) this.enqueueMovement("right");
-        else if (this.swipe.up) this.enqueueMovement("up");
-        else if (this.swipe.down) this.enqueueMovement("down");
+        if (this.swipe.left) this.enqueueMovement("left", this.movementQueue);
+        else if (this.swipe.right) this.enqueueMovement("right", this.movementQueue);
+        else if (this.swipe.up) this.enqueueMovement("up", this.movementQueue);
+        else if (this.swipe.down) this.enqueueMovement("down", this.movementQueue);
       }
 
       if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
@@ -298,7 +298,7 @@ export class DashPaintScene extends Phaser.Scene {
     }${canGetStuckText}`;
   }
 
-  enqueueMovement(direction: Dir4) {
+  enqueueMovement(direction: Dir4, movementQueue:Point[]) {
     const nextMovement = new Phaser.Math.Vector2(0, 0);
 
     if (direction === "left") nextMovement.x = -1;
@@ -306,7 +306,7 @@ export class DashPaintScene extends Phaser.Scene {
     else if (direction === "up") nextMovement.y = -1;
     else if (direction === "down") nextMovement.y = 1;
 
-    this.movementQueue.push(nextMovement);
+    movementQueue.push(nextMovement);
   }
 
   setPlayerPosition(point: Point) {
