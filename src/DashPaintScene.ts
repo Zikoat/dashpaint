@@ -7,8 +7,9 @@ import assert from "assert";
 import { DashEngine } from "./DashEngine";
 import { Dir4 } from "./Helpers";
 import { Point } from "./GeometryHelpers";
+import { Controls } from "./Controls";
 
-type SwipeExtended = Swipe & {
+export type SwipeEvent = {
   up: boolean;
   down: boolean;
   left: boolean;
@@ -25,7 +26,8 @@ export class DashPaintScene extends Phaser.Scene {
   fixSuggestionsLayer!: Phaser.Tilemaps.TilemapLayer;
   scoreCounter!: Phaser.GameObjects.Text;
 
-  swipe!: SwipeExtended;
+  controls: Controls = new Controls();
+  swipe!: Swipe;
   tap!: Tap;
   pinch!: Pinch;
 
@@ -118,19 +120,27 @@ export class DashPaintScene extends Phaser.Scene {
     };
 
     this.input.keyboard.on("keydown-UP", () => {
-      this.enqueueMovement("up", this.movementQueue);
+      this.controls.enqueueMovement("up", this.movementQueue);
     });
     this.input.keyboard.on("keydown-DOWN", () => {
-      this.enqueueMovement("down", this.movementQueue);
+      this.controls.enqueueMovement("down", this.movementQueue);
     });
     this.input.keyboard.on("keydown-LEFT", () => {
-      this.enqueueMovement("left", this.movementQueue);
+      this.controls.enqueueMovement("left", this.movementQueue);
     });
     this.input.keyboard.on("keydown-RIGHT", () => {
-      this.enqueueMovement("right", this.movementQueue);
+      this.controls.enqueueMovement("right", this.movementQueue);
     });
 
-    this.swipe = new Swipe(this, {velocityThreshold:200,threshold :5, dir: "4dir" }) as SwipeExtended;
+    this.swipe = new Swipe(this, {
+      velocityThreshold: 200,
+      threshold: 5,
+      dir: "4dir",
+    });
+
+    this.swipe.on("swipe", (swipe: SwipeEvent) =>
+      this.controls.swipeDash(swipe, this.movementQueue)
+    );
 
     this.tap = new Tap(this, {
       tapInterval: 0,
@@ -246,14 +256,6 @@ export class DashPaintScene extends Phaser.Scene {
 
   update() {
     if (!htmlPhaserFunctions.isEditing) {
-      if (this.swipe.isSwiped) {
-        console.log("swiped");
-        if (this.swipe.left) this.enqueueMovement("left", this.movementQueue);
-        else if (this.swipe.right) this.enqueueMovement("right", this.movementQueue);
-        else if (this.swipe.up) this.enqueueMovement("up", this.movementQueue);
-        else if (this.swipe.down) this.enqueueMovement("down", this.movementQueue);
-      }
-
       if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
         let validMovement = false;
 
@@ -296,17 +298,6 @@ export class DashPaintScene extends Phaser.Scene {
     this.scoreCounter.text = `paint left: ${
       this.maxScore - this.currentScore
     }${canGetStuckText}`;
-  }
-
-  enqueueMovement(direction: Dir4, movementQueue:Point[]) {
-    const nextMovement = new Phaser.Math.Vector2(0, 0);
-
-    if (direction === "left") nextMovement.x = -1;
-    else if (direction === "right") nextMovement.x = 1;
-    else if (direction === "up") nextMovement.y = -1;
-    else if (direction === "down") nextMovement.y = 1;
-
-    movementQueue.push(nextMovement);
   }
 
   setPlayerPosition(point: Point) {
