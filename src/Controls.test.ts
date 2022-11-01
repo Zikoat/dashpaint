@@ -8,21 +8,19 @@ import { graphtoSimpleString } from "./GraphHelpers";
 import { Controls } from "./Controls";
 
 describe("Controls", () => {
-  it("can be constructed", () => {
+  it("enqueues movement", () => {
     const controls = new Controls();
+
+    controls.enqueueMovement("up");
+
+    expect(controls.movementQueue).toStrictEqual([{ x: 0, y: -1 }]);
   });
+
   it("registers swipes", () => {
     const controls = new Controls();
-    const movementQueue: Point[] = [];
 
-    controls.swipeDash(
-      { up: true, down: false, right: false, left: false },
-      movementQueue // shit todo refactor
-    );
+    controls.swipeDash({ up: true, down: false, right: false, left: false });
 
-    expect(movementQueue).toStrictEqual([{ x: 0, y: -1 }]);
-    // expect(controls.movementQueue).toStrictEqual([{ x: 1, y: 0 }]);
-    // expect(controls.popMovement()).toStrictEqual({ x: 1, y: 0 });
-    // expect(controls.movementQueue).toHaveLength(0);
+    expect(controls.movementQueue).toStrictEqual([{ x: 0, y: -1 }]);
   });
 });

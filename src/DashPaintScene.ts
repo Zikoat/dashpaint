@@ -1,7 +1,12 @@
 import * as Phaser from "phaser";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
-import { Pinch, Swipe, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
+import {
+  Pan,
+  Pinch,
+  Swipe,
+  Tap,
+} from "phaser3-rex-plugins/plugins/gestures.js";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
@@ -25,11 +30,12 @@ export class DashPaintScene extends Phaser.Scene {
   pathLengthColorLayer!: Phaser.Tilemaps.TilemapLayer;
   fixSuggestionsLayer!: Phaser.Tilemaps.TilemapLayer;
   scoreCounter!: Phaser.GameObjects.Text;
-
+  
   controls: Controls = new Controls();
   swipe!: Swipe;
   tap!: Tap;
   pinch!: Pinch;
+  pan!: Pan;
 
   movementDirection = { x: 0, y: 0 };
   tileSize = 8;
@@ -120,16 +126,16 @@ export class DashPaintScene extends Phaser.Scene {
     };
 
     this.input.keyboard.on("keydown-UP", () => {
-      this.controls.enqueueMovement("up", this.movementQueue);
+      this.controls.enqueueMovement("up");
     });
     this.input.keyboard.on("keydown-DOWN", () => {
-      this.controls.enqueueMovement("down", this.movementQueue);
+      this.controls.enqueueMovement("down");
     });
     this.input.keyboard.on("keydown-LEFT", () => {
-      this.controls.enqueueMovement("left", this.movementQueue);
+      this.controls.enqueueMovement("left");
     });
     this.input.keyboard.on("keydown-RIGHT", () => {
-      this.controls.enqueueMovement("right", this.movementQueue);
+      this.controls.enqueueMovement("right");
     });
 
     this.swipe = new Swipe(this, {
@@ -139,8 +145,12 @@ export class DashPaintScene extends Phaser.Scene {
     });
 
     this.swipe.on("swipe", (swipe: SwipeEvent) =>
-      this.controls.swipeDash(swipe, this.movementQueue)
+      this.controls.swipeDash(swipe)
     );
+
+    this.pan = new Pan(this, {
+      threshold: 100,
+    });
 
     this.tap = new Tap(this, {
       tapInterval: 0,
@@ -259,8 +269,8 @@ export class DashPaintScene extends Phaser.Scene {
       if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
         let validMovement = false;
 
-        while (!validMovement && this.movementQueue.length > 0) {
-          const nextMovement = this.movementQueue.shift();
+        while (!validMovement && this.controls.movementQueue.length > 0) {
+          const nextMovement = this.controls.movementQueue.shift();
           assert(nextMovement, "Tried dequeueing while queue is empty");
 
           const nextPosition = this.getPlayerPosition().add(nextMovement);
