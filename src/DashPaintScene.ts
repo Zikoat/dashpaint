@@ -100,7 +100,22 @@ export class DashPaintScene extends Phaser.Scene {
     this.layer = this.map.createBlankLayer("ShitLayer1", this.tileset);
 
     const playerSprite = this.textures.get("tiles");
-    playerSprite.add("player", 0, 0, 24, this.tileSize, this.tileSize);
+    playerSprite.add(
+      "player",
+      0,
+      0,
+      this.tileSize * 3,
+      this.tileSize,
+      this.tileSize
+    );
+    playerSprite.add(
+      "wall",
+      0,
+      this.tileSize * 2,
+      0,
+      this.tileSize,
+      this.tileSize
+    );
 
     this.player = this.add.image(0, 0, playerSprite);
     this.player.depth = 3;
@@ -157,7 +172,7 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.pan.on("pan", (pan: PanEvent) => this.controls.pan(pan));
 
-    this.pan.on("panend", (pan: PanEndEvent) => this.controls.panEnd());
+    this.pan.on("panend", () => this.controls.panEnd());
 
     this.tap = new Tap(this, {
       tapInterval: 0,
@@ -297,6 +312,7 @@ export class DashPaintScene extends Phaser.Scene {
           this.movementDirection = { x: 0, y: 0 };
         }
       }
+
       const currentTile = this.layer.getTileAt(
         this.getPlayerPosition().x,
         this.getPlayerPosition().y
@@ -305,6 +321,8 @@ export class DashPaintScene extends Phaser.Scene {
       if (currentTile.tint === 0) {
         currentTile.tint = this.paintColor;
         this.currentScore++;
+
+        this.createPaintingAnimation(currentTile);
       }
     }
     // map size: ${this.dashEngine._mapScore()},
@@ -315,6 +333,25 @@ export class DashPaintScene extends Phaser.Scene {
     this.scoreCounter.text = `paint left: ${
       this.maxScore - this.currentScore
     }${canGetStuckText}`;
+  }
+
+  createPaintingAnimation(tile: Point) {
+    const worldPosition = this.layer.tileToWorldXY(tile.x, tile.y);
+
+    const newSprite = this.add.sprite(
+      worldPosition.x + this.tileSize / 2,
+      worldPosition.y + this.tileSize / 2,
+      "tiles",
+      "wall"
+    );
+    newSprite.tint = 0xffff88;
+    const animationDuration = 300;
+
+    this.tweens.add({
+      targets: newSprite,
+      duration: animationDuration,
+      alpha: 0,
+    });
   }
 
   setPlayerPosition(point: Point) {
