@@ -1,11 +1,9 @@
 import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faPencil,
-  faRotateRight,
-} from "@fortawesome/free-solid-svg-icons";
+import { faPencil, faRotateRight } from "@fortawesome/free-solid-svg-icons";
 import loadingAnimation from "../public/dashpaint/animations/loadingAnimation.gif";
+import Image from "next/image";
 
 const LoadWithoutSSR = dynamic(() => import("../src/ReactGame"), {
   ssr: false,
@@ -106,12 +104,12 @@ export default function DashPaintPage(): JSX.Element {
               left: "50%",
             }}
           >
-            <img
-              src={loadingAnimation.src}
+            <Image
+              src={loadingAnimation}
               alt="loading..."
+              width={40}
               style={{
                 imageRendering: "pixelated",
-                width: "3rem",
                 height: "3rem",
               }}
             />

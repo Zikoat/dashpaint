@@ -1,4 +1,4 @@
-import { Point } from "./Helpers";
+import { Point } from "./GeometryHelpers";
 
 export class MapStorage {
   private data: Record<number, Record<number, number>> = {};
