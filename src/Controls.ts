@@ -1,25 +1,61 @@
-import { SwipeEvent } from "./DashPaintScene";
-import { Point } from "./GeometryHelpers";
+import { addVectors, normalizeVector, Point } from "./GeometryHelpers";
 import { Dir4 } from "./Helpers";
 
 export class Controls {
   movementQueue: Point[] = [];
+  panThreshold = 20;
 
-  swipeDash(swipe: SwipeEvent) {
-    if (swipe.left) this.enqueueMovement("left");
-    else if (swipe.right) this.enqueueMovement("right");
-    else if (swipe.up) this.enqueueMovement("up");
-    else if (swipe.down) this.enqueueMovement("down");
+  constructor(private panPosition: Point = { x: 0, y: 0 }) {}
+
+  panEnd() {
+    this.panPosition = { x: 0, y: 0 };
+  }
+
+  pan(pan: { dx: number; dy: number }) {
+    const dPan = { x: pan.dx, y: pan.dy };
+    console.log(dPan, this.panPosition);
+    this.panPosition = addVectors({ x: pan.dx, y: pan.dy }, this.panPosition);
+
+    if (
+      Math.abs(this.panPosition.x) > this.panThreshold ||
+      Math.abs(this.panPosition.y) > this.panThreshold
+    ) {
+      const dashHorisontally =
+        Math.abs(this.panPosition.x) > Math.abs(this.panPosition.y);
+
+      const dash = normalizeVector({
+        x: dashHorisontally ? this.panPosition.x : 0,
+        y: dashHorisontally ? 0 : this.panPosition.y,
+      });
+
+      this.movementQueue.push(dash);
+
+      this.panPosition = { x: 0, y: 0 };
+    }
   }
 
   enqueueMovement(direction: Dir4) {
-    const nextMovement = { x: 0, y: 0 };
+    const movement = this.directionToMovement(direction);
+    this.movementQueue.push(movement);
+  }
 
-    if (direction === "left") nextMovement.x = -1;
-    else if (direction === "right") nextMovement.x = 1;
-    else if (direction === "up") nextMovement.y = -1;
-    else if (direction === "down") nextMovement.y = 1;
+  directionToMovement(direction: Dir4) {
+    const movement = { x: 0, y: 0 };
 
-    this.movementQueue.push(nextMovement);
+    if (direction === "left") movement.x = -1;
+    else if (direction === "right") movement.x = 1;
+    else if (direction === "up") movement.y = -1;
+    else if (direction === "down") movement.y = 1;
+
+    return movement;
+  }
+  movementToDirection(movement: Point): Dir4 {
+    const normalized = normalizeVector(movement);
+
+    if (normalized.x === -1) return "left";
+    else if (normalized.x === 1) return "right";
+    else if (normalized.y === -1) return "up";
+    else if (normalized.y === 1) return "down";
+    else throw Error(`movement ${movement} not recognized as direction`);
   }
 }

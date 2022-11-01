@@ -10,9 +10,6 @@ Object.freeze(DIRECTIONS);
 
 export type Dir4 = "up" | "down" | "left" | "right";
 
-
-
-
 function isArray(arr: unknown): arr is unknown[] {
   return isObject(arr) && "length" in arr && (arr as unknown[]).length >= 0;
 }
@@ -24,7 +21,6 @@ export function isStringArray(arr: unknown): arr is string[] {
 function isObject(obj: unknown): obj is object {
   return typeof obj === "object" && obj !== null;
 }
-
 
 // stolen from https://gist.github.com/xposedbones/75ebaef3c10060a3ee3b246166caab56
 function clamp(input: number, min: number, max: number): number {

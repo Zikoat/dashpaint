@@ -1,24 +1,38 @@
 import * as Phaser from "phaser";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
-import {
-  Pan,
-  Pinch,
-  Swipe,
-  Tap,
-} from "phaser3-rex-plugins/plugins/gestures.js";
+import { Pan, Pinch, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
-import { Dir4 } from "./Helpers";
 import { Point } from "./GeometryHelpers";
 import { Controls } from "./Controls";
 
-export type SwipeEvent = {
-  up: boolean;
-  down: boolean;
-  left: boolean;
-  right: boolean;
+export type PanEvent = {
+  dx: number;
+  dy: number;
+  worldX: number;
+  worldY: number;
+  x: number;
+  y: number;
+
+  // gameObject: Phaser.GameObjects.GameObject;
+  // lastPointer: Phaser.Input.Pointer;
+  // scene:number;
+};
+
+export type PanEndEvent = {
+  endWorldX: number;
+  endWorldY: number;
+  endX: number;
+  endY: number;
+};
+
+export type PanStartEvent = {
+  startWorldX: number;
+  startWorldY: number;
+  startX: number;
+  startY: number;
 };
 
 export class DashPaintScene extends Phaser.Scene {
@@ -30,9 +44,8 @@ export class DashPaintScene extends Phaser.Scene {
   pathLengthColorLayer!: Phaser.Tilemaps.TilemapLayer;
   fixSuggestionsLayer!: Phaser.Tilemaps.TilemapLayer;
   scoreCounter!: Phaser.GameObjects.Text;
-  
+
   controls: Controls = new Controls();
-  swipe!: Swipe;
   tap!: Tap;
   pinch!: Pinch;
   pan!: Pan;
@@ -138,19 +151,13 @@ export class DashPaintScene extends Phaser.Scene {
       this.controls.enqueueMovement("right");
     });
 
-    this.swipe = new Swipe(this, {
-      velocityThreshold: 200,
-      threshold: 5,
-      dir: "4dir",
-    });
-
-    this.swipe.on("swipe", (swipe: SwipeEvent) =>
-      this.controls.swipeDash(swipe)
-    );
-
     this.pan = new Pan(this, {
-      threshold: 100,
+      threshold: 0,
     });
+
+    this.pan.on("pan", (pan: PanEvent) => this.controls.pan(pan));
+
+    this.pan.on("panend", (pan: PanEndEvent) => this.controls.panEnd());
 
     this.tap = new Tap(this, {
       tapInterval: 0,

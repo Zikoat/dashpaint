@@ -1,10 +1,4 @@
-import { SwipeEvent } from "./DashPaintScene";
-import { Point } from "./GeometryHelpers";
-import { Dir4 } from "./Helpers";
 import { describe, expect, it } from "vitest";
-import { AnalysedTile, DashEngine } from "./DashEngine";
-import { ORIGIN } from "./GeometryHelpers";
-import { graphtoSimpleString } from "./GraphHelpers";
 import { Controls } from "./Controls";
 
 describe("Controls", () => {
@@ -16,11 +10,18 @@ describe("Controls", () => {
     expect(controls.movementQueue).toStrictEqual([{ x: 0, y: -1 }]);
   });
 
-  it("registers swipes", () => {
+  it("should dash if panned more than 10 pixels", () => {
     const controls = new Controls();
+    controls.pan({ dx: 10, dy: 0 });
+    expect(controls.movementQueue).toHaveLength(0);
 
-    controls.swipeDash({ up: true, down: false, right: false, left: false });
+    controls.pan({ dx: 30, dy: 10 });
+    expect(controls.movementQueue).toHaveLength(1);
+    expect(controls.movementQueue[0]?.x).toBe(1);
 
-    expect(controls.movementQueue).toStrictEqual([{ x: 0, y: -1 }]);
+    controls.pan({ dx: 15, dy: 10 });
+    controls.panEnd();
+    controls.pan({ dx: 15, dy: 10 });
+    expect(controls.movementQueue).toHaveLength(1);
   });
 });
