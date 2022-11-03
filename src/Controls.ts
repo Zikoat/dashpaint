@@ -3,7 +3,7 @@ import { Dir4 } from "./Helpers";
 
 export class Controls {
   movementQueue: Point[] = [];
-  panThreshold = 20;
+  panThreshold = 50;
 
   constructor(private panPosition: Point = { x: 0, y: 0 }) {}
 

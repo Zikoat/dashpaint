@@ -145,6 +145,7 @@ export class DashPaintScene extends Phaser.Scene {
       .add(this.connectedComponentsLayer, "alpha", 0, 1)
       .name("Show analysis");
     this.gui.add(this.fixSuggestionsLayer, "alpha", 0, 1).name("Show fixes");
+    this.gui.add(this.controls, "panThreshold", 20, 200);
 
     htmlPhaserFunctions.startEdit = () => this.startEdit();
     htmlPhaserFunctions.stopEdit = () => this.stopEdit();
