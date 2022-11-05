@@ -15,13 +15,13 @@ describe("Controls", () => {
     controls.pan({ dx: 10, dy: 0 });
     expect(controls.movementQueue).toHaveLength(0);
 
-    controls.pan({ dx: 30, dy: 10 });
+    controls.pan({ dx: 60, dy: 10 });
     expect(controls.movementQueue).toHaveLength(1);
     expect(controls.movementQueue[0]?.x).toBe(1);
 
-    controls.pan({ dx: 15, dy: 10 });
+    controls.pan({ dx: 40, dy: 10 });
     controls.panEnd();
-    controls.pan({ dx: 15, dy: 10 });
+    controls.pan({ dx: 40, dy: 10 });
     expect(controls.movementQueue).toHaveLength(1);
   });
 });
