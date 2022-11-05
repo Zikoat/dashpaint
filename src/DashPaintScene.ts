@@ -1,7 +1,7 @@
 import * as Phaser from "phaser";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
-import { Pan, Pinch, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
+import { Pinch, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
 import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
@@ -56,7 +56,6 @@ export class DashPaintScene extends Phaser.Scene {
   controls: Controls = new Controls();
   tap!: Tap;
   pinch!: Pinch;
-  pan!: Pan;
 
   movementDirection = { x: 0, y: 0 };
   tileSize = 8;
@@ -183,29 +182,26 @@ export class DashPaintScene extends Phaser.Scene {
       }
     });
 
-    this.pan = new Pan(this, {
-      threshold: 0,
-    });
-
-    this.pan.on("pan", (pan: PanEvent) => {
-      if (htmlPhaserFunctions.isEditing) {
-        this.cameras.main.setScroll(
-          this.cameras.main.scrollX - pan.dx / this.zoom,
-          this.cameras.main.scrollY - pan.dy / this.zoom
-        );
-      } else {
-        this.controls.pan(pan);
-      }
-    });
-
-    this.pan.on("panend", () => this.controls.panEnd());
-
+    
     this.tap = new Tap(this, {
       tapInterval: 0,
     });
     this.tap.on("tap", this.handleTap);
-
+    
     this.pinch = new Pinch(this);
+    this.pinch.on("drag1", (pan: {drag1Vector:Point}) => {
+
+      if (htmlPhaserFunctions.isEditing) {
+        this.cameras.main.setScroll(
+          this.cameras.main.scrollX - pan.drag1Vector.x / this.zoom,
+          this.cameras.main.scrollY - pan.drag1Vector.y / this.zoom
+          );
+        } else {
+          this.controls.pan(pan.drag1Vector);
+        }
+      });
+      this.pinch.on("pinchend", () => this.controls.panEnd());
+
     this.pinch.on("pinch", (pinch: Pinch) => {
       this.zoom *= pinch.scaleFactor;
 

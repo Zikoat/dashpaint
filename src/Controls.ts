@@ -11,9 +11,8 @@ export class Controls {
     this.panPosition = { x: 0, y: 0 };
   }
 
-  pan(pan: { dx: number; dy: number }) {
-    const dPan = { x: pan.dx, y: pan.dy };
-    this.panPosition = addVectors({ x: pan.dx, y: pan.dy }, this.panPosition);
+  pan(pan: Point) {
+    this.panPosition = addVectors({ x: pan.x, y: pan.y }, this.panPosition);
 
     if (
       Math.abs(this.panPosition.x) > this.panThreshold ||
