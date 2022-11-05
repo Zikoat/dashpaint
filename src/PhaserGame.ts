@@ -1,4 +1,4 @@
-import { DashPaintScene } from "./DashPaintScene";
+import { DashPaintScene, theme } from "./DashPaintScene";
 
 export const DashPaintConfig: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -8,9 +8,8 @@ export const DashPaintConfig: Phaser.Types.Core.GameConfig = {
   height: window.innerHeight,
   parent: "phaser-container",
   pixelArt: true,
-  backgroundColor: "#ffffff",
+  backgroundColor: theme.colors[theme.index]?.[0],
   scene: [DashPaintScene],
-  
 };
 
 export const DashPaintGame = new Phaser.Game(DashPaintConfig);

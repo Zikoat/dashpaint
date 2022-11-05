@@ -35,6 +35,14 @@ export type PanStartEvent = {
   startY: number;
 };
 
+export const theme = {
+  index: 1,
+  colors: [
+    [0x000000, 0xffffff],
+    [0xffffff, 0x000000],
+  ],
+};
+
 export class DashPaintScene extends Phaser.Scene {
   player!: Phaser.GameObjects.Image;
   layer!: Phaser.Tilemaps.TilemapLayer;
@@ -194,7 +202,7 @@ export class DashPaintScene extends Phaser.Scene {
     });
 
     this.scoreCounter = this.add.text(0, -15, "test", {
-      color: "black",
+      color: chroma(theme.colors[theme.index]?.[1] ?? 0).hex(),
       fontStyle: "strong",
       resolution: 10,
     });
