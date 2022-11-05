@@ -163,23 +163,40 @@ export class DashPaintScene extends Phaser.Scene {
     };
 
     this.input.keyboard.on("keydown-UP", () => {
-      this.controls.enqueueMovement("up");
+      if (!htmlPhaserFunctions.isEditing) {
+        this.controls.enqueueMovement("up");
+      }
     });
     this.input.keyboard.on("keydown-DOWN", () => {
-      this.controls.enqueueMovement("down");
+      if (!htmlPhaserFunctions.isEditing) {
+        this.controls.enqueueMovement("down");
+      }
     });
     this.input.keyboard.on("keydown-LEFT", () => {
-      this.controls.enqueueMovement("left");
+      if (!htmlPhaserFunctions.isEditing) {
+        this.controls.enqueueMovement("left");
+      }
     });
     this.input.keyboard.on("keydown-RIGHT", () => {
-      this.controls.enqueueMovement("right");
+      if (!htmlPhaserFunctions.isEditing) {
+        this.controls.enqueueMovement("right");
+      }
     });
 
     this.pan = new Pan(this, {
       threshold: 0,
     });
 
-    this.pan.on("pan", (pan: PanEvent) => this.controls.pan(pan));
+    this.pan.on("pan", (pan: PanEvent) => {
+      if (htmlPhaserFunctions.isEditing) {
+        this.cameras.main.setScroll(
+          this.cameras.main.scrollX - pan.dx / this.zoom,
+          this.cameras.main.scrollY - pan.dy / this.zoom
+        );
+      } else {
+        this.controls.pan(pan);
+      }
+    });
 
     this.pan.on("panend", () => this.controls.panEnd());
 
@@ -192,18 +209,18 @@ export class DashPaintScene extends Phaser.Scene {
     this.pinch.on("pinch", (pinch: Pinch) => {
       this.zoom *= pinch.scaleFactor;
 
-      this.cameras.main.setScroll(
-        this.cameras.main.scrollX - pinch.movementCenterX / 2,
-        this.cameras.main.scrollY - pinch.movementCenterY / 2
-      );
-      this.cameras.main.zoom = this.zoom;
+      if (htmlPhaserFunctions.isEditing) {
+        this.cameras.main.setScroll(
+          this.cameras.main.scrollX - pinch.movementCenterX / this.zoom,
+          this.cameras.main.scrollY - pinch.movementCenterY / this.zoom
+        );
+      }
 
-      this.cameras.main.stopFollow();
+      this.cameras.main.zoom = this.zoom;
     });
 
     this.input.on("wheel", (event: { deltaY: number }) => {
-      console.log(event.deltaY);
-      const scrollWheelSensitivity = 1 / 5000;
+      const scrollWheelSensitivity = 1 / 2000;
 
       this.zoom *= 1 + event.deltaY * scrollWheelSensitivity;
       this.cameras.main.zoom = this.zoom;
@@ -384,12 +401,25 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   startEdit() {
-    this.player.alpha = 0.5;
     this.analyzeMap();
+
+    this.cameras.main.stopFollow();
+
+    this.player.alpha = 0.5;
+    this.connectedComponentsLayer.alpha = 0.85;
+    const currentTheme = theme.colors[0] ?? [];
+    this.scoreCounter.setColor(chroma(currentTheme[1] ?? 0).hex());
+    this.cameras.main.setBackgroundColor(chroma(currentTheme[0] ?? 0).hex());
   }
 
   stopEdit() {
+    this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
+
     this.player.alpha = 1;
+    this.connectedComponentsLayer.alpha = 0;
+    const currentTheme = theme.colors[1] ?? [];
+    this.scoreCounter.setColor(chroma(currentTheme[1] ?? 0).hex());
+    this.cameras.main.setBackgroundColor(chroma(currentTheme[0] ?? 0).hex());
   }
 
   // colorMapSteadyState() {
