@@ -201,6 +201,14 @@ export class DashPaintScene extends Phaser.Scene {
       this.cameras.main.stopFollow();
     });
 
+    this.input.on("wheel", (event: { deltaY: number }) => {
+      console.log(event.deltaY);
+      const scrollWheelSensitivity = 1 / 5000;
+
+      this.zoom *= 1 + event.deltaY * scrollWheelSensitivity;
+      this.cameras.main.zoom = this.zoom;
+    });
+
     this.scoreCounter = this.add.text(0, -15, "test", {
       color: chroma(theme.colors[theme.index]?.[1] ?? 0).hex(),
       fontStyle: "strong",
