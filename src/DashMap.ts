@@ -1,10 +1,5 @@
 import seedrandom from "seedrandom";
-import {
-  forEachTileInRect,
-  isEqual,
-  Point,
-  Rect,
-} from "./GeometryHelpers";
+import { forEachTileInRect, isEqual, Point, Rect } from "./GeometryHelpers";
 import { MapStorage } from "./MapStorage";
 
 export class DashMap {
@@ -105,12 +100,15 @@ export class DashMap {
     return rect;
   }
 
-  to2dString(spawnPoint: Point) {
+  to2dString(spawnPoint: Point): string {
     const bounds = this.getBounds();
     return this.getRectAsString(bounds, spawnPoint);
   }
 
-  static fromString(mapString: string) {
+  static fromString(mapString: string): {
+    dashMap: DashMap;
+    spawnPoint: Point;
+  } {
     const newMap = new DashMap();
     const rows = mapString.split("\n");
     let spawnPoint: Point | undefined;
@@ -122,7 +120,7 @@ export class DashMap {
       const cells = row.split("");
       for (let j = 0; j < cells.length; j++) {
         const cell = cells[j];
-        const point = { x: i, y: j };
+        const point = { x: j, y: i };
         if (cell === ".") {
           newMap.setWallAt(point, false);
         }
@@ -132,6 +130,9 @@ export class DashMap {
         }
       }
     }
+
+    if (spawnPoint === undefined)
+      throw Error("Couldnt load map. SpawnPoint is not defined");
 
     return { dashMap: newMap, spawnPoint: spawnPoint };
   }

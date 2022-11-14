@@ -1,5 +1,4 @@
 import { Dir4, DIRECTIONS, mapRange } from "./Helpers";
-import { MapStorage } from "./MapStorage";
 import createGraph, { Graph, Link, Node, NodeId } from "ngraph.graph";
 import assert from "assert";
 import { findScc } from "./GraphHelpers";
@@ -20,6 +19,7 @@ import {
 } from "./GeometryHelpers";
 import { Dash } from "./DashHelpers";
 import { DashMap } from "./DashMap";
+import { LevelSelector } from "./LevelSelector";
 
 export class DashEngine {
   spawnPoint: Point;
@@ -32,7 +32,7 @@ export class DashEngine {
 
     this.spawnPoint = spawnPoint;
     this.playerPosition = spawnPoint;
-    this.map = new DashMap();
+    this.map = options?.dashMap ?? new DashMap();
 
     this.map.setWallAt(spawnPoint, false);
   }
@@ -51,6 +51,9 @@ export class DashEngine {
   }
   getRectAsString(rect: Rect, spawnPoint?: Point): string {
     return this.map.getRectAsString(rect, spawnPoint);
+  }
+  to2dString(): string {
+    return this.map.to2dString(this.spawnPoint);
   }
 
   dash(direction: Dir4): Point {
@@ -551,6 +554,12 @@ export class DashEngine {
 
     return fixes;
   }
+
+  static loadLevel(levelNumber: number) {
+    const { dashMap, spawnPoint } = LevelSelector.getLevel(levelNumber);
+
+    return new DashEngine({ dashMap, spawnPoint });
+  }
 }
 
 // types
@@ -571,5 +580,5 @@ export type AnalysedTile = {
 // core
 export interface DashEngineOptions {
   spawnPoint?: Point;
-  mapStorage?: MapStorage;
+  dashMap?: DashMap;
 }

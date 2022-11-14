@@ -168,6 +168,7 @@ export class DashPaintScene extends Phaser.Scene {
     this.gui
       .add(this.controls, "panThreshold", 20, 200)
       .name("Swipe sensitivity");
+    this.gui.add(this, "printMap");
 
     this.input.keyboard.on("keydown-UP", () => {
       if (!this.isEditing) {
@@ -592,6 +593,10 @@ export class DashPaintScene extends Phaser.Scene {
     var angle = Math.atan2(y, x);
     var degrees = (180 * angle) / Math.PI;
     return (360 + Math.round(degrees)) % 360;
+  }
+
+  printMap() {
+    console.log(this.dashEngine.to2dString());
   }
 }
 

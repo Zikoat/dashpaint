@@ -552,18 +552,34 @@ describe("DashEngine", () => {
 
       expect(shit).toMatchInlineSnapshot(`
         {
-          "SingleComponent": 5,
-          "initial": 1,
-          "singleDash": 2,
-          "twoComponents": 0,
-        }
-      `);
+        "SingleComponent": 5,
+        "initial": 1,
+        "singleDash": 2,
+        "twoComponents": 0,
+      }
+    `);
     });
     it.todo(
       "sigurd should move this to its own test file, and maybe make it into its own class"
     );
   });
 
-  it.todo("creates a map from a string");
+  it("loads from the level selector", () => {
+    const engine: DashEngine = DashEngine.loadLevel(0);
+
+    const analysedPoint = engine.analysePoint({ x: 3, y: 0 });
+    expect(analysedPoint).toMatchInlineSnapshot(`
+    {
+      "canCollide": false,
+      "canStop": true,
+      "componentId": 0,
+      "fixScore": 3,
+      "isWall": false,
+      "numberOfDashesPassingOver": 0,
+      "x": 3,
+      "y": 0,
+    }
+  `);
+  });
   it.todo("sigurd should move the fixer into its own class");
 });
