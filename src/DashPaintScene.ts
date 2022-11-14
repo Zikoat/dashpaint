@@ -4,7 +4,7 @@ import * as dat from "dat.gui";
 import { Pinch, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
-import { Point } from "./GeometryHelpers";
+import { forEachTileInRect, Point } from "./GeometryHelpers";
 import { Controls } from "./Controls";
 import {
   mutationsToPhaser,
@@ -246,10 +246,11 @@ export class DashPaintScene extends Phaser.Scene {
   resetGame() {
     this.dashEngine.generateMap(this.mapSize, this.seed);
 
-    this.dashEngine.forEachTileInRect(
+    forEachTileInRect(
       { x: 0, y: 0, width: this.mapSize, height: this.mapSize },
       (tile) => {
-        this.layer.putTileAt(tile.collidable ? 2 : 0, tile.x, tile.y);
+        const isWall = this.dashEngine.getWallAt(tile);
+        this.layer.putTileAt(isWall ? 2 : 0, tile.x, tile.y);
       }
     );
 

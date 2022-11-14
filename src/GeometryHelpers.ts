@@ -68,3 +68,14 @@ export function pointInRectToIndex(point: Point, rect: Rect) {
   if (!isInRect(point, rect)) throw Error("point is outside rect");
   return rect.width * (point.y - rect.y) + point.x - rect.x;
 }
+
+export function forEachTileInRect(
+  rect: Rect,
+  callback: (point: Point) => void
+) {
+  for (let i = 0; i < rect.height; i++) {
+    for (let j = 0; j < rect.width; j++) {
+      callback({ x: j + rect.x, y: i + rect.y });
+    }
+  }
+}

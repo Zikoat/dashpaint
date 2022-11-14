@@ -14,12 +14,6 @@ describe("DashEngine", () => {
     expect(dashEngine.playerPosition).toBe(ORIGIN);
   });
 
-  it("should create a map of size n*n, and print it", () => {
-    const dashEngine = new DashEngine();
-
-    expect(dashEngine.playerPosition).toStrictEqual(ORIGIN);
-  });
-
   it("should be able to dash to the right, if the left block is walkable", () => {
     const dashEngine = new DashEngine();
 
@@ -27,76 +21,6 @@ describe("DashEngine", () => {
     const newPlayerPosition = dashEngine.dash("right");
 
     expect(newPlayerPosition).toStrictEqual({ x: 1, y: 0 });
-  });
-
-  it("should get a rect as string", () => {
-    const dashEngine = new DashEngine();
-    dashEngine.setWallAt({ x: 2, y: 0 }, false);
-
-    const map = dashEngine.getRectAsString({
-      x: -1,
-      y: -1,
-      width: 5,
-      height: 3,
-    });
-
-    expect(map).toMatchInlineSnapshot(
-      `
-      "#####
-      #.#.#
-      #####"
-    `
-    );
-  });
-
-  it("should fill an area as wall", () => {
-    const dashEngine = new DashEngine();
-
-    dashEngine.fillWallAt({ x: -1, y: -1, width: 3, height: 3 }, false);
-
-    const map = dashEngine.getRectAsString({
-      x: -2,
-      y: -2,
-      width: 5,
-      height: 5,
-    });
-
-    expect(map).toMatchInlineSnapshot(
-      `
-      "#####
-      #...#
-      #...#
-      #...#
-      #####"
-    `
-    );
-  });
-
-  it("should fill an area randomly with probability and seeding", () => {
-    const dashEngine = new DashEngine();
-
-    dashEngine.fillRandom(
-      { x: -1, y: -1, width: 3, height: 3 },
-      undefined,
-      "1"
-    );
-
-    const map = dashEngine.getRectAsString({
-      x: -2,
-      y: -2,
-      width: 5,
-      height: 5,
-    });
-
-    expect(map).toMatchInlineSnapshot(
-      `
-      "#####
-      #..##
-      #.###
-      ##..#
-      #####"
-    `
-    );
   });
 
   describe("simplest map", () => {
@@ -635,9 +559,11 @@ describe("DashEngine", () => {
         }
       `);
     });
-    it.todo("sigurd should move this to its own test file, and maybe make it into its own class")
+    it.todo(
+      "sigurd should move this to its own test file, and maybe make it into its own class"
+    );
   });
-  
-  it.todo("creates a map from a string")
-  it.todo('sigurd should move the fixer into its own class')
+
+  it.todo("creates a map from a string");
+  it.todo("sigurd should move the fixer into its own class");
 });

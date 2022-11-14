@@ -1,6 +1,5 @@
 import { Dir4, DIRECTIONS, mapRange } from "./Helpers";
 import { MapStorage } from "./MapStorage";
-import seedrandom from "seedrandom";
 import createGraph, { Graph, Link, Node, NodeId } from "ngraph.graph";
 import assert from "assert";
 import { findScc } from "./GraphHelpers";
@@ -17,76 +16,48 @@ import {
   scaleVector,
   isEqual,
   isInRect,
+  forEachTileInRect,
 } from "./GeometryHelpers";
 import { Dash } from "./DashHelpers";
+import { DashMap } from "./DashMap";
 
 export class DashEngine {
   spawnPoint: Point;
   playerPosition: Point;
-  private mapStorage: MapStorage;
+
+  private map: DashMap;
 
   constructor(options?: DashEngineOptions) {
     const spawnPoint = options?.spawnPoint ?? ORIGIN;
 
     this.spawnPoint = spawnPoint;
     this.playerPosition = spawnPoint;
-    this.mapStorage = options?.mapStorage ?? new MapStorage();
+    this.map = new DashMap();
 
-    this.setWallAt(spawnPoint, false);
-  }
-
-  // map
-
-  setWallAt(point: Point, isWall: boolean) {
-    const wallNumber = isWall ? 2 : 1;
-
-    this.mapStorage.setAt(point, wallNumber);
-  }
-
-  fillWallAt(rect: Rect, isWall: boolean) {
-    this.forEachTileInRect(rect, (tile) => {
-      this.setWallAt(tile, isWall);
-    });
-  }
-
-  fillRandom(rect: Rect, probability = 0.5, seed?: string) {
-    const random = seedrandom(seed);
-
-    this.forEachTileInRect(rect, (tile) => {
-      const isWall = random() > probability;
-
-      this.setWallAt(tile, isWall);
-    });
+    this.map.setWallAt(spawnPoint, false);
   }
 
   getWallAt(point: Point): boolean {
-    const wallNumber = this.mapStorage.getAt(point);
-    const isWall = wallNumber === null || wallNumber === 2;
-
-    return isWall;
+    return this.map.getWallAt(point);
+  }
+  setWallAt(p: Point, w: boolean) {
+    this.map.setWallAt(p, w);
+  }
+  fillWallAt(r: Rect, w: boolean) {
+    this.map.fillWallAt(r, w);
+  }
+  fillRandom(rect: Rect, probability?: number, seed?: string) {
+    this.map.fillRandom(rect, probability, seed);
+  }
+  getRectAsString(rect: Rect, spawnPoint?: Point): string {
+    return this.map.getRectAsString(rect, spawnPoint);
   }
 
-  // core
-
-  forEachTileInRect(
-    rect: Rect,
-    callback: (tile: { collidable: boolean } & Point) => void
-  ) {
-    for (let i = 0; i < rect.height; i++) {
-      for (let j = 0; j < rect.width; j++) {
-        const tilePosition = { x: j + rect.x, y: i + rect.y };
-
-        const collidable = this.getWallAt(tilePosition);
-
-        callback({ ...tilePosition, collidable });
-      }
-    }
-  }
   dash(direction: Dir4): Point {
     const movement = this.directionToMovement(direction);
     const currentPosition = this.playerPosition;
     const nextPosition = addVectors(movement, currentPosition);
-    const nextPositionCollidable = this.getWallAt(nextPosition);
+    const nextPositionCollidable = this.map.getWallAt(nextPosition);
 
     if (!nextPositionCollidable) this.playerPosition = nextPosition;
     return this.playerPosition;
@@ -101,26 +72,6 @@ export class DashEngine {
     else if (direction === "down") movement.y = 1;
 
     return movement;
-  }
-
-  getRectAsString(rect: Rect): string {
-    let asciiOutput = "";
-    let counter = 0;
-
-    this.forEachTileInRect(rect, (tile) => {
-      counter++;
-
-      asciiOutput += tile.collidable ? "#" : ".";
-
-      if (
-        tile.x === rect.x + rect.width - 1 &&
-        tile.y !== rect.y + rect.height - 1
-      ) {
-        asciiOutput += "\n";
-      }
-    });
-
-    return asciiOutput;
   }
 
   private linkToDash(link: Link): Dash {
@@ -199,7 +150,9 @@ export class DashEngine {
       y: point.y,
     };
 
-    let positionIsWall = this.getWallAt(addVectors(currentPosition, direction));
+    let positionIsWall = this.map.getWallAt(
+      addVectors(currentPosition, direction)
+    );
 
     let pathLength = 1;
 
@@ -214,7 +167,9 @@ export class DashEngine {
 
       currentPosition = addVectors(currentPosition, direction);
 
-      positionIsWall = this.getWallAt(addVectors(currentPosition, direction));
+      positionIsWall = this.map.getWallAt(
+        addVectors(currentPosition, direction)
+      );
     }
 
     return currentPosition;
@@ -232,8 +187,8 @@ export class DashEngine {
   // map generator
 
   public generateMap(mapSize: number, seed?: number) {
-    this.fillWallAt({ x: 0, y: 0, width: mapSize, height: mapSize }, true);
-    this.fillRandom(
+    this.map.fillWallAt({ x: 0, y: 0, width: mapSize, height: mapSize }, true);
+    this.map.fillRandom(
       {
         x: 1,
         y: 1,
@@ -243,7 +198,7 @@ export class DashEngine {
       0.65,
       seed?.toString()
     );
-    this.fillWallAt(
+    this.map.fillWallAt(
       {
         x: this.spawnPoint.x,
         y: this.spawnPoint.y,
@@ -273,7 +228,7 @@ export class DashEngine {
   // analysis
 
   private createDashGraph(start: Point) {
-    if (this.getWallAt(start))
+    if (this.map.getWallAt(start))
       throw Error(
         `cannot create graph from point ${this.pointToString(start)}`
       );
@@ -313,9 +268,9 @@ export class DashEngine {
 
     const fixes = this.mapFixScores(this.suggestFixes(dashGraph));
 
-    this.forEachTileInRect(rect, (tile) => {
+    forEachTileInRect(rect, (point) => {
       const analysedTile = this.analysePoint(
-        tile,
+        point,
         dashGraph,
         componentGraph,
         fixes
@@ -394,7 +349,7 @@ export class DashEngine {
       canStop = true;
     }
 
-    isWall = this.getWallAt(pointToAnalyse);
+    isWall = this.map.getWallAt(pointToAnalyse);
 
     if (dashGraph.getNodesCount() === 1) {
       this.forEachNeighbor(this.spawnPoint, (neighbor) => {
@@ -428,7 +383,7 @@ export class DashEngine {
         const canStopOnNeighbor = !!dashGraph.getNode(
           this.pointToString(neighborPosition)
         );
-        const oppositeWallOfNeighborIsWall = this.getWallAt(
+        const oppositeWallOfNeighborIsWall = this.map.getWallAt(
           subtractVectors(neighborPosition, neighbor)
         );
         if (oppositeWallOfNeighborIsWall && canStopOnNeighbor) {
@@ -480,7 +435,7 @@ export class DashEngine {
     if (bestFix === undefined) throw Error("No fixes returned");
 
     for (const fix of bestFix.tiles) {
-      this.setWallAt(fix, fix.suggestWall);
+      this.map.setWallAt(fix, fix.suggestWall);
     }
   }
 
@@ -582,10 +537,10 @@ export class DashEngine {
     for (const tile of interestingTilesSet) {
       const point = this.stringToPoint(tile);
       if (!isEqual(point, this.spawnPoint)) {
-        const isWall = this.getWallAt(point);
-        this.setWallAt(point, !isWall);
+        const isWall = this.map.getWallAt(point);
+        this.map.setWallAt(point, !isWall);
         const score = this._mapScore();
-        this.setWallAt(point, isWall);
+        this.map.setWallAt(point, isWall);
 
         fixes.push({
           score: score,
@@ -618,4 +573,3 @@ export interface DashEngineOptions {
   spawnPoint?: Point;
   mapStorage?: MapStorage;
 }
-

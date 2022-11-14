@@ -10,8 +10,12 @@ export class MapStorage {
 
     this.data[point.x]![point.y] = numberToSave;
   }
-  
+
   getAt(point: Point): number | null {
     return this.data[point.x]?.[point.y] ?? null;
+  }
+
+  getAllSaved() {
+    return this.data;
   }
 }
