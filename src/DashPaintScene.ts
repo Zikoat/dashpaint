@@ -10,6 +10,7 @@ import {
   mutationsToPhaser,
   settersToReact,
 } from "./components/PhaserReactBridge";
+import { LevelSelector } from "./LevelSelector";
 
 export type PanEvent = {
   dx: number;
@@ -71,14 +72,7 @@ export class DashPaintScene extends Phaser.Scene {
 
   gui = new dat.GUI();
 
-  dashEngine = new DashEngine({
-    spawnPoint: {
-      // x: 1,
-      // y: 1,
-      x: this.mapSize / 2,
-      y: this.mapSize / 2,
-    },
-  });
+  dashEngine = DashEngine.loadLevel(0);
 
   preload() {
     mutationsToPhaser.setIsEditing = (isEditing) => {
@@ -91,7 +85,14 @@ export class DashPaintScene extends Phaser.Scene {
     };
 
     mutationsToPhaser.resetLevel = () => {
+      this.dashEngine.spawnPoint = {
+        x: this.mapSize / 2,
+        y: this.mapSize / 2,
+      };
+      
       this.seed = undefined;
+      this.dashEngine.generateMap(this.mapSize, this.seed);
+
       this.resetGame();
     };
 
@@ -245,8 +246,6 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   resetGame() {
-    this.dashEngine.generateMap(this.mapSize, this.seed);
-
     forEachTileInRect(
       { x: 0, y: 0, width: this.mapSize, height: this.mapSize },
       (tile) => {
