@@ -14,10 +14,10 @@ export function ProgressText() {
   const shouldShowRemaining = remaining < 10 && remaining > 0;
 
   return (
-    <p style={{ color: "white" }}>
+    <div style={{ color: "white", padding: "0.5rem 1rem"  }}>
       progress: {percentage}
       {shouldShowRemaining ? <>, only {remaining} remaining!</> : undefined}
-    </p>
+    </div>
   );
 }
 

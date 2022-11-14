@@ -4,17 +4,18 @@ type GlobalFunctions = {
   startEdit: () => void;
   stopEdit: () => void;
   clickReset: () => void;
-  setCanGetStuck: (arg: boolean) => void;
 };
 
 export type SettersToReact = {
   setProgress: (arg: Progress) => void;
   setLoading: (arg: boolean) => void;
+  setCanGetStuck: (arg: boolean) => void;
 };
 
 export const settersToReact: SettersToReact = {
   setProgress: defaultImplementation,
   setLoading: defaultImplementation,
+  setCanGetStuck: defaultImplementation,
 };
 
 type MutationsToPhaser = {
@@ -32,5 +33,4 @@ export let htmlPhaserFunctions: GlobalFunctions = {
   stopEdit: defaultImplementation,
   startEdit: defaultImplementation,
   clickReset: defaultImplementation,
-  setCanGetStuck: () => {},
 };

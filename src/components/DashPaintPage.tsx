@@ -16,6 +16,7 @@ export const reactInitialState = {
   isLoading: true,
   isEditing: false,
   mutateEditing: (arg: boolean) => {},
+  stuckable: false,
 };
 
 export const MyContext = React.createContext(reactInitialState);
@@ -24,10 +25,12 @@ export default function DashPaintPage(): JSX.Element {
   const [progress, setProgress] = useState(reactInitialState.progress);
   const [isLoading, setLoading] = useState(reactInitialState.isLoading);
   const [isEditing, setIsEditing] = useState(reactInitialState.isEditing);
+  const [isStuckable, setIsStuckable] = useState(reactInitialState.stuckable);
 
   // export react setters so we can mutate the state in phaser
   settersToReact.setLoading = setLoading;
   settersToReact.setProgress = setProgress;
+  settersToReact.setCanGetStuck = setIsStuckable;
 
   // pass down phaser setters so we can mutate the state in react
   function mutateEditing(newEditing: boolean) {
@@ -43,6 +46,7 @@ export default function DashPaintPage(): JSX.Element {
           isLoading,
           isEditing,
           mutateEditing,
+          stuckable: isStuckable,
         }}
       >
         {isLoading ? <LoadingPage></LoadingPage> : <GameUi />}

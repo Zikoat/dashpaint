@@ -284,7 +284,8 @@ export class DashPaintScene extends Phaser.Scene {
       tapPoint.x >= this.mapSize ||
       tapPoint.x >= this.mapSize;
 
-    if (!isOutOfBounds && this.isEditing) {
+    console.log(tap.scene.isEditing);
+    if (!isOutOfBounds && tap.scene.isEditing) {
       const tile: Phaser.Tilemaps.Tile | null = scene.layer.getTileAt(
         tapPoint.x,
         tapPoint.y,
@@ -373,7 +374,7 @@ export class DashPaintScene extends Phaser.Scene {
     // map size: ${this.dashEngine._mapScore()},
 
     const canGetStuck = this.dashEngine.getComponentCount() !== 1;
-    htmlPhaserFunctions.setCanGetStuck(canGetStuck);
+    settersToReact.setCanGetStuck(canGetStuck);
   }
 
   createPaintingAnimation(tile: Point) {

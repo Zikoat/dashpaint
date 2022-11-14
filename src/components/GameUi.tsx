@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { EditButton } from "./EditButton";
-import { htmlPhaserFunctions } from "./PhaserReactBridge";
 import { ProgressText } from "./ProgressText";
 import { ResetButton } from "./ResetButton";
+import { StuckText } from "./StuckText";
 
 export function GameUi() {
   return (
@@ -26,10 +26,4 @@ export function GameUi() {
       </div>
     </>
   );
-}
-
-function StuckText() {
-  const [stuckable, setStuckable] = useState(false);
-  htmlPhaserFunctions.setCanGetStuck = setStuckable;
-  return stuckable ? <p>warning: you can get stuck</p> : null;
 }
