@@ -9,4 +9,5 @@ export const settersToReact = {
 export const mutationsToPhaser = {
   setIsEditing: (_arg: boolean) => {},
   resetLevel: () => {},
+  nextLevel: () => {},
 };

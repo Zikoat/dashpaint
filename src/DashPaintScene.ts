@@ -61,12 +61,17 @@ export class DashPaintScene extends Phaser.Scene {
   mapSize = 20;
   maxScore = 0;
   currentScore = 0;
-  zoom = 3;
+  zoom = 6;
   seed: number | undefined = 321;
   paintColor = 0xff44ff;
   ccLayerDefaultAlpha = 0;
   fixLayerDefaultAlpha = 0;
   isEditing = false;
+  tutorial!: {
+    step: number;
+    group: Phaser.GameObjects.Container;
+    timeline: Phaser.Tweens.Timeline;
+  };
 
   movementQueue: Point[] = [];
 
@@ -84,12 +89,15 @@ export class DashPaintScene extends Phaser.Scene {
       }
     };
 
-    mutationsToPhaser.resetLevel = () => {
+    mutationsToPhaser.resetLevel = () => {};
+
+    mutationsToPhaser.nextLevel = () => {
+      console.log("going to next level");
       this.dashEngine.spawnPoint = {
         x: this.mapSize / 2,
         y: this.mapSize / 2,
       };
-      
+
       this.seed = undefined;
       this.dashEngine.generateMap(this.mapSize, this.seed);
 
@@ -243,6 +251,7 @@ export class DashPaintScene extends Phaser.Scene {
     this.gui.close();
 
     this.resetGame();
+    this.showTutorial();
   }
 
   resetGame() {
@@ -340,6 +349,11 @@ export class DashPaintScene extends Phaser.Scene {
         );
         if (!this.dashEngine.getWallAt(nextPosition)) {
           this.setPlayerPosition(nextPosition);
+
+          if (this.movementDirection.x === 1 && this.tutorial.step === 0)
+            this.tutorialStep2();
+          else if (this.movementDirection.y === 1 && this.tutorial.step === 1)
+            this.tutorialStep3();
         } else {
           this.movementDirection = { x: 0, y: 0 };
         }
@@ -596,6 +610,83 @@ export class DashPaintScene extends Phaser.Scene {
 
   printMap() {
     console.log(this.dashEngine.to2dString());
+  }
+
+  showTutorial() {
+    const text = this.add.text(-14, -13, "\n👆", {
+      color: "0x000000",
+      resolution: 10,
+    });
+
+    const arrows = this.add.text(-25, -10, "⬅️  ➡️", {
+      color: "0x000000",
+      fontSize: "10px",
+      resolution: 10,
+    });
+    const timeline = this.tweens.createTimeline({ loop: -1 });
+
+    this.tutorial = {
+      step: 0,
+      group: this.add.container(0, 0, [text, arrows]),
+      timeline: timeline,
+    };
+
+    this.tutorial.group.depth = 10;
+
+    this.tutorial.group.setPosition(16, 70);
+
+    const defaultTween = {
+      targets: this.tutorial.group,
+      ease: "Cubic.easeInOut",
+      duration: 500,
+    };
+
+    timeline.add({ ...defaultTween, alpha: { from: 0, to: 1 } });
+    timeline.add({ ...defaultTween, x: 40 });
+    timeline.add({ ...defaultTween, alpha: 0 });
+    timeline.add({ ...defaultTween, x: 16, duration: 1000 });
+
+    // timeline.add({ ...defaultTween, x: { from: 16, to: 30 }, duration: 0 });
+
+    // timeline.add({
+    //   targets: this.tutorial.group,
+    //   x: { from: 16, to: 30 },
+    //   duration: 1000,
+    //   ease: "Quad.easeInOut",
+    //   hold: 500,
+    // });
+
+    timeline.play();
+  }
+
+  tutorialStep2() {
+    this.tutorial.step = 1;
+    this.tutorial.group.setRotation(-Math.PI / 2);
+    this.tutorial.group.setPosition(40, 40);
+    this.tutorial.group.setAlpha(0);
+    const timeline = this.tutorial.timeline;
+    timeline.stop();
+
+    const newTimeline = this.tweens.createTimeline({ loop: -1 });
+    this.tutorial.timeline = newTimeline;
+
+    const defaultTween = {
+      targets: this.tutorial.group,
+      ease: "Cubic.easeInOut",
+      duration: 500,
+    };
+
+    newTimeline.add({ ...defaultTween, alpha: { from: 0, to: 1 } });
+    newTimeline.add({ ...defaultTween, y: 70 });
+    newTimeline.add({ ...defaultTween, alpha: 0 });
+    newTimeline.add({ ...defaultTween, y: 40, duration: 1000 });
+
+    newTimeline.play();
+  }
+  tutorialStep3() {
+    this.tutorial.timeline.stop();
+    this.tutorial.group.destroy();
+    this.tutorial.step = 2;
   }
 }
 
