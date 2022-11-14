@@ -20,7 +20,6 @@ export function GameUi() {
       >
         <ResetButton></ResetButton>
         <EditButton></EditButton>
-        <br></br>
         <ProgressText></ProgressText>
         <StuckText></StuckText>
       </div>

@@ -18,10 +18,6 @@ export type PanEvent = {
   worldY: number;
   x: number;
   y: number;
-
-  // gameObject: Phaser.GameObjects.GameObject;
-  // lastPointer: Phaser.Input.Pointer;
-  // scene:number;
 };
 
 export type PanEndEvent = {
