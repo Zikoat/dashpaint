@@ -1,10 +1,5 @@
 import { Progress } from "./ProgressText";
 
-type GlobalFunctions = {
-  startEdit: () => void;
-  stopEdit: () => void;
-  clickReset: () => void;
-};
 
 export type SettersToReact = {
   setProgress: (arg: Progress) => void;
@@ -28,6 +23,12 @@ export const mutationsToPhaser: MutationsToPhaser = {
 function defaultImplementation() {
   throw new Error("game not started yet");
 }
+
+type GlobalFunctions = {
+  startEdit: () => void;
+  stopEdit: () => void;
+  clickReset: () => void;
+};
 
 export let htmlPhaserFunctions: GlobalFunctions = {
   stopEdit: defaultImplementation,
