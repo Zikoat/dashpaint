@@ -1,20 +1,14 @@
-import React, { useState } from "react";
+import React, { useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPencil } from "@fortawesome/free-solid-svg-icons";
-import { htmlPhaserFunctions } from "./PhaserReactBridge";
+import { MyContext } from "./DashPaintPage";
 
 export function EditButton() {
-  const [isEditing, setIsEditing] = useState(false);
+  const { isEditing, mutateEditing } = useContext(MyContext);
 
-  htmlPhaserFunctions.clickEdit = () => {
-    if (isEditing) {
-      htmlPhaserFunctions.stopEdit();
-    } else {
-      htmlPhaserFunctions.startEdit();
-    }
-    setIsEditing(!isEditing);
-    htmlPhaserFunctions.isEditing = !isEditing;
-  };
+  function toggleEdit() {
+    mutateEditing(!isEditing);
+  }
 
   const pencilColor = isEditing ? "white" : "gray";
 
@@ -26,7 +20,7 @@ export function EditButton() {
         padding: "0.30rem",
         margin: "0.25rem",
       }}
-      onClick={htmlPhaserFunctions.clickEdit}
+      onClick={toggleEdit}
     >
       <FontAwesomeIcon
         icon={faPencil}

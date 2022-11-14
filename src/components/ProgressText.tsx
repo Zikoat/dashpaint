@@ -1,4 +1,5 @@
 import React, { useContext } from "react";
+import { colors } from "../colors";
 import { MyContext } from "./DashPaintPage";
 
 export function ProgressText() {
@@ -13,10 +14,10 @@ export function ProgressText() {
   const shouldShowRemaining = remaining < 10 && remaining > 0;
 
   return (
-    <>
+    <p style={{ color: "white" }}>
       progress: {percentage}
       {shouldShowRemaining ? <>, only {remaining} remaining!</> : undefined}
-    </>
+    </p>
   );
 }
 

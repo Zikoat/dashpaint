@@ -6,7 +6,11 @@ import assert from "assert";
 import { DashEngine } from "./DashEngine";
 import { Point } from "./GeometryHelpers";
 import { Controls } from "./Controls";
-import { htmlPhaserFunctions } from "./components/PhaserReactBridge";
+import {
+  htmlPhaserFunctions,
+  mutationsToPhaser,
+  settersToReact,
+} from "./components/PhaserReactBridge";
 
 export type PanEvent = {
   dx: number;
@@ -51,7 +55,6 @@ export class DashPaintScene extends Phaser.Scene {
   connectedComponentsLayer!: Phaser.Tilemaps.TilemapLayer;
   pathLengthColorLayer!: Phaser.Tilemaps.TilemapLayer;
   fixSuggestionsLayer!: Phaser.Tilemaps.TilemapLayer;
-  scoreCounter!: Phaser.GameObjects.Text;
 
   controls: Controls = new Controls();
   tap!: Tap;
@@ -67,6 +70,7 @@ export class DashPaintScene extends Phaser.Scene {
   paintColor = 0xff44ff;
   ccLayerDefaultAlpha = 0;
   fixLayerDefaultAlpha = 0;
+  isEditing = false;
 
   movementQueue: Point[] = [];
 
@@ -82,11 +86,20 @@ export class DashPaintScene extends Phaser.Scene {
   });
 
   preload() {
+    mutationsToPhaser.setIsEditing = (isEditing) => {
+      this.isEditing = isEditing;
+      if (isEditing) {
+        this.startEdit();
+      } else {
+        this.stopEdit();
+      }
+    };
+
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
   }
 
   create() {
-    htmlPhaserFunctions.setLoading(false);
+    settersToReact.setLoading(false);
 
     this.map = this.make.tilemap({
       width: this.mapSize,
@@ -166,22 +179,22 @@ export class DashPaintScene extends Phaser.Scene {
     };
 
     this.input.keyboard.on("keydown-UP", () => {
-      if (!htmlPhaserFunctions.isEditing) {
+      if (!this.isEditing) {
         this.controls.enqueueMovement("up");
       }
     });
     this.input.keyboard.on("keydown-DOWN", () => {
-      if (!htmlPhaserFunctions.isEditing) {
+      if (!this.isEditing) {
         this.controls.enqueueMovement("down");
       }
     });
     this.input.keyboard.on("keydown-LEFT", () => {
-      if (!htmlPhaserFunctions.isEditing) {
+      if (!this.isEditing) {
         this.controls.enqueueMovement("left");
       }
     });
     this.input.keyboard.on("keydown-RIGHT", () => {
-      if (!htmlPhaserFunctions.isEditing) {
+      if (!this.isEditing) {
         this.controls.enqueueMovement("right");
       }
     });
@@ -193,7 +206,7 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.pinch = new Pinch(this);
     this.pinch.on("drag1", (pan: { drag1Vector: Point }) => {
-      if (htmlPhaserFunctions.isEditing) {
+      if (this.isEditing) {
         this.cameras.main.setScroll(
           this.cameras.main.scrollX - pan.drag1Vector.x / this.zoom,
           this.cameras.main.scrollY - pan.drag1Vector.y / this.zoom
@@ -207,7 +220,7 @@ export class DashPaintScene extends Phaser.Scene {
     this.pinch.on("pinch", (pinch: Pinch) => {
       this.zoom *= pinch.scaleFactor;
 
-      if (htmlPhaserFunctions.isEditing) {
+      if (this.isEditing) {
         this.cameras.main.setScroll(
           this.cameras.main.scrollX - pinch.movementCenterX / this.zoom,
           this.cameras.main.scrollY - pinch.movementCenterY / this.zoom
@@ -222,12 +235,6 @@ export class DashPaintScene extends Phaser.Scene {
 
       this.zoom *= 1 + event.deltaY * scrollWheelSensitivity;
       this.cameras.main.zoom = this.zoom;
-    });
-
-    this.scoreCounter = this.add.text(0, -15, "test", {
-      color: chroma(theme.colors[theme.index]?.[1] ?? 0).hex(),
-      fontStyle: "strong",
-      resolution: 10,
     });
 
     const myValueToEdit = {
@@ -277,7 +284,7 @@ export class DashPaintScene extends Phaser.Scene {
       tapPoint.x >= this.mapSize ||
       tapPoint.x >= this.mapSize;
 
-    if (!isOutOfBounds && htmlPhaserFunctions.isEditing) {
+    if (!isOutOfBounds && this.isEditing) {
       const tile: Phaser.Tilemaps.Tile | null = scene.layer.getTileAt(
         tapPoint.x,
         tapPoint.y,
@@ -319,7 +326,7 @@ export class DashPaintScene extends Phaser.Scene {
   // }
 
   update() {
-    if (!htmlPhaserFunctions.isEditing) {
+    if (!this.isEditing) {
       if (this.movementDirection.x === 0 && this.movementDirection.y === 0) {
         let validMovement = false;
 
@@ -354,7 +361,7 @@ export class DashPaintScene extends Phaser.Scene {
         currentTile.tint = this.paintColor;
         this.currentScore++;
 
-        htmlPhaserFunctions.setProgress({
+        settersToReact.setProgress({
           total: this.maxScore,
           painted: this.currentScore,
         });
@@ -408,7 +415,6 @@ export class DashPaintScene extends Phaser.Scene {
     this.player.alpha = 0.5;
     this.connectedComponentsLayer.alpha = 0.85;
     const currentTheme = theme.colors[0] ?? [];
-    this.scoreCounter.setColor(chroma(currentTheme[1] ?? 0).hex());
     this.cameras.main.setBackgroundColor(chroma(currentTheme[0] ?? 0).hex());
   }
 
@@ -418,7 +424,6 @@ export class DashPaintScene extends Phaser.Scene {
     this.player.alpha = 1;
     this.connectedComponentsLayer.alpha = 0;
     const currentTheme = theme.colors[1] ?? [];
-    this.scoreCounter.setColor(chroma(currentTheme[1] ?? 0).hex());
     this.cameras.main.setBackgroundColor(chroma(currentTheme[0] ?? 0).hex());
   }
 
@@ -576,7 +581,7 @@ export class DashPaintScene extends Phaser.Scene {
       }
     });
 
-    htmlPhaserFunctions.setProgress({ total: this.maxScore, painted: 0 });
+    settersToReact.setProgress({ total: this.maxScore, painted: 0 });
     console.timeEnd("analyseMap");
   }
 

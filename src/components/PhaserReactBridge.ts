@@ -2,13 +2,26 @@ import { Progress } from "./ProgressText";
 
 type GlobalFunctions = {
   startEdit: () => void;
-  clickEdit: () => void;
   stopEdit: () => void;
-  setLoading: (arg: boolean) => void;
-  isEditing: boolean;
   clickReset: () => void;
-  setProgress: (arg: Progress) => void;
   setCanGetStuck: (arg: boolean) => void;
+};
+
+export type SettersToReact = {
+  setProgress: (arg: Progress) => void;
+  setLoading: (arg: boolean) => void;
+};
+
+export const settersToReact: SettersToReact = {
+  setProgress: defaultImplementation,
+  setLoading: defaultImplementation,
+};
+
+type MutationsToPhaser = {
+  setIsEditing: (arg: boolean) => void;
+};
+export const mutationsToPhaser: MutationsToPhaser = {
+  setIsEditing: defaultImplementation,
 };
 
 function defaultImplementation() {
@@ -16,12 +29,8 @@ function defaultImplementation() {
 }
 
 export let htmlPhaserFunctions: GlobalFunctions = {
-  clickEdit: defaultImplementation,
   stopEdit: defaultImplementation,
   startEdit: defaultImplementation,
-  setLoading: defaultImplementation,
-  isEditing: false,
   clickReset: defaultImplementation,
-  setProgress: () => {},
   setCanGetStuck: () => {},
 };
