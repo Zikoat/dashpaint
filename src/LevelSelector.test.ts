@@ -9,31 +9,12 @@ describe("LevelSelector", () => {
     expect(spawnPoint).toStrictEqual({ x: 0, y: 1 });
     expect(dashMap.getWallAt({ x: 3, y: 0 })).toBe(false);
     expect(dashMap.getWallAt({ x: 2, y: 1 })).toBe(true);
-    expect(dashMap.to2dString(spawnPoint)).toBe(levels[0]);
+    expect(dashMap.to2dString(spawnPoint)).toMatchInlineSnapshot(`
+      "....
+      S##.
+      ###.
+      ###."
+    `);
   });
 });
 
-export const levels = [
-  `....
-S##.
-###.
-###.`,
-  `.#..#.##....#.....
-##..#..........###
-.#.##...##.....#..
-..####...###...###
-.#.......#.#...##.
-#...#.######...###
-.#..#.#....#.#.#..
-##..#.#..#.##..#..
-..#.#...##..#..#..
-....#..#.S....#...
-....##.#..##......
-#....#.##.#.####.#
-........##.#.....#
-#....##...........
-...#..#.##..###..#
-#.#.....###..#....
-.#....#..##..###.#
-..#.###.#.#.....#.`,
-];

@@ -1,6 +1,5 @@
 import { DashMap } from "./DashMap";
 import { Point } from "./GeometryHelpers";
-import { levels } from "./LevelSelector.test";
 
 export class LevelSelector {
   static getLevel(levelNumber: number): {
@@ -13,3 +12,28 @@ export class LevelSelector {
     return DashMap.fromString(mapString);
   }
 }
+
+const levels = [
+  `....
+S##.
+###.
+###.`,
+  `.#..#.##....#.....
+##..#..........###
+.#.##...##.....#..
+..####...###...###
+.#.......#.#...##.
+#...#.######...###
+.#..#.#....#.#.#..
+##..#.#..#.##..#..
+..#.#...##..#..#..
+....#..#.S....#...
+....##.#..##......
+#....#.##.#.####.#
+........##.#.....#
+#....##...........
+...#..#.##..###..#
+#.#.....###..#....
+.#....#..##..###.#
+..#.###.#.#.....#.`,
+];
