@@ -152,7 +152,9 @@ export class DashPaintScene extends Phaser.Scene {
       .add(this.connectedComponentsLayer, "alpha", 0, 1)
       .name("Show analysis");
     this.gui.add(this.fixSuggestionsLayer, "alpha", 0, 1).name("Show fixes");
-    this.gui.add(this.controls, "panThreshold", 20, 200);
+    this.gui
+      .add(this.controls, "panThreshold", 20, 200)
+      .name("Swipe sensitivity");
 
     htmlPhaserFunctions.startEdit = () => this.startEdit();
     htmlPhaserFunctions.stopEdit = () => this.stopEdit();
@@ -182,25 +184,23 @@ export class DashPaintScene extends Phaser.Scene {
       }
     });
 
-    
     this.tap = new Tap(this, {
       tapInterval: 0,
     });
     this.tap.on("tap", this.handleTap);
-    
-    this.pinch = new Pinch(this);
-    this.pinch.on("drag1", (pan: {drag1Vector:Point}) => {
 
+    this.pinch = new Pinch(this);
+    this.pinch.on("drag1", (pan: { drag1Vector: Point }) => {
       if (htmlPhaserFunctions.isEditing) {
         this.cameras.main.setScroll(
           this.cameras.main.scrollX - pan.drag1Vector.x / this.zoom,
           this.cameras.main.scrollY - pan.drag1Vector.y / this.zoom
-          );
-        } else {
-          this.controls.pan(pan.drag1Vector);
-        }
-      });
-      this.pinch.on("pinchend", () => this.controls.panEnd());
+        );
+      } else {
+        this.controls.pan(pan.drag1Vector);
+      }
+    });
+    this.pinch.on("pinchend", () => this.controls.panEnd());
 
     this.pinch.on("pinch", (pinch: Pinch) => {
       this.zoom *= pinch.scaleFactor;
