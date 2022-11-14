@@ -2,11 +2,11 @@ import * as Phaser from "phaser";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
 import { Pinch, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
-import { htmlPhaserFunctions } from "../pages";
 import assert from "assert";
 import { DashEngine } from "./DashEngine";
 import { Point } from "./GeometryHelpers";
 import { Controls } from "./Controls";
+import { htmlPhaserFunctions } from "./components/PhaserReactBridge";
 
 export type PanEvent = {
   dx: number;
