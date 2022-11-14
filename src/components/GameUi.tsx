@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { EditButton } from "./EditButton";
+import { htmlPhaserFunctions } from "./PhaserReactBridge";
+import { ProgressText } from "./ProgressText";
 import { ResetButton } from "./ResetButton";
 
 export function GameUi() {
@@ -14,17 +16,19 @@ export function GameUi() {
           left: "1rem",
           backgroundColor: "black",
           border: "2px solid white",
-
         }}
       >
         <ResetButton></ResetButton>
         <EditButton></EditButton>
         <ProgressText></ProgressText>
+        <StuckText></StuckText>
       </div>
     </>
   );
 }
 
-function ProgressText() {
-  return <p>progress: 1</p>;
+function StuckText() {
+  const [stuckable, setStuckable] = useState(false);
+  htmlPhaserFunctions.setCanGetStuck = setStuckable;
+  return stuckable ? <p>warning: you can get stuck</p> : null;
 }

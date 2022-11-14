@@ -86,7 +86,7 @@ export class DashPaintScene extends Phaser.Scene {
   }
 
   create() {
-    htmlPhaserFunctions.loadFinished();
+    htmlPhaserFunctions.setLoading(false);
 
     this.map = this.make.tilemap({
       width: this.mapSize,
@@ -156,7 +156,9 @@ export class DashPaintScene extends Phaser.Scene {
       .add(this.controls, "panThreshold", 20, 200)
       .name("Swipe sensitivity");
 
-    htmlPhaserFunctions.startEdit = () => this.startEdit();
+    htmlPhaserFunctions.startEdit = () => {
+      this.startEdit();
+    };
     htmlPhaserFunctions.stopEdit = () => this.stopEdit();
     htmlPhaserFunctions.clickReset = () => {
       this.seed = undefined;
@@ -352,17 +354,19 @@ export class DashPaintScene extends Phaser.Scene {
         currentTile.tint = this.paintColor;
         this.currentScore++;
 
+        htmlPhaserFunctions.setProgress({
+          total: this.maxScore,
+          painted: this.currentScore,
+        });
+
         this.createPaintingAnimation(currentTile);
       }
     }
+
     // map size: ${this.dashEngine._mapScore()},
-    const canGetStuckText =
-      this.dashEngine.getComponentCount() === 1
-        ? ""
-        : ", warning: you can get stuck";
-    this.scoreCounter.text = `paint left: ${
-      this.maxScore - this.currentScore
-    }${canGetStuckText}`;
+
+    const canGetStuck = this.dashEngine.getComponentCount() !== 1;
+    htmlPhaserFunctions.setCanGetStuck(canGetStuck);
   }
 
   createPaintingAnimation(tile: Point) {
@@ -572,6 +576,7 @@ export class DashPaintScene extends Phaser.Scene {
       }
     });
 
+    htmlPhaserFunctions.setProgress({ total: this.maxScore, painted: 0 });
     console.timeEnd("analyseMap");
   }
 

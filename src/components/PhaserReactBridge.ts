@@ -1,10 +1,14 @@
+import { Progress } from "./ProgressText";
+
 type GlobalFunctions = {
   startEdit: () => void;
   clickEdit: () => void;
   stopEdit: () => void;
-  loadFinished: () => void;
+  setLoading: (arg: boolean) => void;
   isEditing: boolean;
   clickReset: () => void;
+  setProgress: (arg: Progress) => void;
+  setCanGetStuck: (arg: boolean) => void;
 };
 
 function defaultImplementation() {
@@ -15,7 +19,9 @@ export let htmlPhaserFunctions: GlobalFunctions = {
   clickEdit: defaultImplementation,
   stopEdit: defaultImplementation,
   startEdit: defaultImplementation,
-  loadFinished: defaultImplementation,
+  setLoading: defaultImplementation,
   isEditing: false,
   clickReset: defaultImplementation,
+  setProgress: () => {},
+  setCanGetStuck: () => {},
 };
