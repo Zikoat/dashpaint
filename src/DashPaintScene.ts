@@ -7,7 +7,6 @@ import { DashEngine } from "./DashEngine";
 import { Point } from "./GeometryHelpers";
 import { Controls } from "./Controls";
 import {
-  htmlPhaserFunctions,
   mutationsToPhaser,
   settersToReact,
 } from "./components/PhaserReactBridge";
@@ -95,6 +94,11 @@ export class DashPaintScene extends Phaser.Scene {
       }
     };
 
+    mutationsToPhaser.resetLevel = () => {
+      this.seed = undefined;
+      this.resetGame();
+    };
+
     this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
   }
 
@@ -168,15 +172,6 @@ export class DashPaintScene extends Phaser.Scene {
     this.gui
       .add(this.controls, "panThreshold", 20, 200)
       .name("Swipe sensitivity");
-
-    htmlPhaserFunctions.startEdit = () => {
-      this.startEdit();
-    };
-    htmlPhaserFunctions.stopEdit = () => this.stopEdit();
-    htmlPhaserFunctions.clickReset = () => {
-      this.seed = undefined;
-      this.resetGame();
-    };
 
     this.input.keyboard.on("keydown-UP", () => {
       if (!this.isEditing) {

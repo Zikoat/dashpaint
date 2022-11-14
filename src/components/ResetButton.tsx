@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useContext } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRotateRight } from "@fortawesome/free-solid-svg-icons";
-import { htmlPhaserFunctions } from "./PhaserReactBridge";
+import { MyContext } from "./DashPaintPage";
 
 export function ResetButton() {
+  const { resetLevel } = useContext(MyContext);
   return (
     <button
       style={{
@@ -12,7 +13,7 @@ export function ResetButton() {
         padding: "0.30rem",
         margin: "0.25rem",
       }}
-      onClick={htmlPhaserFunctions.clickReset}
+      onClick={resetLevel}
     >
       <FontAwesomeIcon
         icon={faRotateRight}

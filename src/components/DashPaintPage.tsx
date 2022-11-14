@@ -17,6 +17,7 @@ export const reactInitialState = {
   isEditing: false,
   mutateEditing: (arg: boolean) => {},
   stuckable: false,
+  resetLevel: () => {},
 };
 
 export const MyContext = React.createContext(reactInitialState);
@@ -47,6 +48,7 @@ export default function DashPaintPage(): JSX.Element {
           isEditing,
           mutateEditing,
           stuckable: isStuckable,
+          resetLevel: mutationsToPhaser.resetLevel,
         }}
       >
         {isLoading ? <LoadingPage></LoadingPage> : <GameUi />}
