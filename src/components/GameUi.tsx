@@ -10,7 +10,7 @@ import { StuckText } from "./StuckText";
 export function GameUi() {
   const { progress } = useContext(MyContext);
 
-  const showNextLevelModel = progress.painted === progress.total;
+  const showNextLevelModal = progress.painted === progress.total;
 
   return (
     <>
@@ -32,7 +32,7 @@ export function GameUi() {
         <button onClick={() => window.game.scale.toggleFullscreen()}>
           fullscreen
         </button>
-      {showNextLevelModel ? <NextLevelModal></NextLevelModal> : <></>}
+        {showNextLevelModal ? <NextLevelModal></NextLevelModal> : <></>}
       </div>
     </>
   );
