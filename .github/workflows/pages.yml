@@ -30,13 +30,13 @@ jobs:
     steps:
       - name: Setup Bun
         uses: xHyroM/setup-bun@v0.1.7
+        cache: true
       - name: Checkout
         uses: actions/checkout@v3
       - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18
-          cache: "bun"
       - name: Install dependencies
         run: bun install
       - name: Build
