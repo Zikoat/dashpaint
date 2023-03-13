@@ -236,7 +236,7 @@ export class DashPaintScene extends Phaser.Scene {
     this.input.on("wheel", (event: { deltaY: number }) => {
       const scrollWheelSensitivity = 1 / 2000;
 
-      this.zoom *= 1 + event.deltaY * scrollWheelSensitivity;
+      this.zoom *= 1 - event.deltaY * scrollWheelSensitivity;
       this.cameras.main.zoom = this.zoom;
     });
 
