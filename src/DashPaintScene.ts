@@ -10,6 +10,7 @@ import {
   settersToReact,
 } from "./components/PhaserReactBridge";
 import { assert } from "./assert";
+import tileSetUrl from "../assets/DashpaintTilesetV2.png";
 
 export type PanEvent = {
   dx: number;
@@ -105,7 +106,7 @@ export class DashPaintScene extends Phaser.Scene {
       this.resetGame();
     };
 
-    this.load.image("tiles", "./assets/DashpaintTilesetV2.png");
+    this.load.image("tiles", tileSetUrl);
   }
 
   create() {
