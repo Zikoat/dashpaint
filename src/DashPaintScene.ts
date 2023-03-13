@@ -93,19 +93,6 @@ export class DashPaintScene extends Phaser.Scene {
       this.resetGame();
     };
 
-    mutationsToPhaser.nextLevel = () => {
-      console.log("going to next level");
-      this.dashEngine.spawnPoint = {
-        x: this.mapSize / 2,
-        y: this.mapSize / 2,
-      };
-
-      this.seed = undefined;
-      this.dashEngine.generateMap(this.mapSize, this.seed);
-
-      this.resetGame();
-    };
-
     this.load.image("tiles", tileSetUrl);
   }
 
@@ -374,6 +361,10 @@ export class DashPaintScene extends Phaser.Scene {
           total: this.maxScore,
           painted: this.currentScore,
         });
+        
+        if (this.currentScore === this.maxScore) {
+          this.nextLevel();
+        }
 
         this.createPaintingAnimation(currentTile);
       }
@@ -689,6 +680,19 @@ export class DashPaintScene extends Phaser.Scene {
     this.tutorial.timeline.stop();
     this.tutorial.group.destroy();
     this.tutorial.step = 2;
+  }
+
+  nextLevel() {
+    console.log("going to next level");
+    this.dashEngine.spawnPoint = {
+      x: this.mapSize / 2,
+      y: this.mapSize / 2,
+    };
+
+    this.seed = undefined;
+    this.dashEngine.generateMap(this.mapSize, this.seed);
+
+    this.resetGame();
   }
 }
 
