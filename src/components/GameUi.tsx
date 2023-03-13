@@ -32,8 +32,8 @@ export function GameUi() {
         <button onClick={() => window.game.scale.toggleFullscreen()}>
           fullscreen
         </button>
-        {showNextLevelModal ? <NextLevelModal></NextLevelModal> : <></>}
       </div>
+      {showNextLevelModal ? <NextLevelModal></NextLevelModal> : <></>}
     </>
   );
 }
@@ -56,6 +56,9 @@ export function NextLevelModal() {
         flexDirection: "column",
         justifyContent: "space-around",
         alignItems: "center",
+        left: "50%",
+        top: "70%",
+        transform: "translate(-50%, -50%)",
       }}
     >
       Good job!
