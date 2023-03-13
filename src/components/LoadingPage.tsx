@@ -1,6 +1,5 @@
 import React from "react";
 import loadingAnimation from "../../public/dashpaint/animations/loadingAnimation.gif";
-import Image from "next/image";
 
 export function LoadingPage() {
   return (
@@ -12,7 +11,7 @@ export function LoadingPage() {
           left: "50%",
         }}
       >
-        <Image
+        <img
           src={loadingAnimation}
           alt="loading..."
           width={40}
