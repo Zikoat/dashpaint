@@ -1,36 +1,27 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ESNext"
-    ],
-    "module": "esnext",
-    "target": "esnext",
-    "types": [
-      "bun-types"
-    ],
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
+    "allowJs": true,
     "esModuleInterop": true,
-    "typeRoots": [
-      "src/customTypings",
-      "node_modules/@types"
-    ],
-    "skipLibCheck": true,
-    "strict": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmit": true,
     "incremental": true,
     "isolatedModules": true,
     "jsx": "preserve",
+    "lib": ["ESNext"],
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noEmit": true,
+    "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
-    "allowJs": true
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "esnext",
+    "typeRoots": ["src/customTypings", "node_modules/@types"],
+    "types": ["bun-types", "vite/client"]
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"]
 }
