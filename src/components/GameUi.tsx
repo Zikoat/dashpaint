@@ -1,4 +1,4 @@
-import { faCaretRight, faRotateRight } from "@fortawesome/free-solid-svg-icons";
+import { faCaretRight } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useContext } from "react";
 import { MyContext } from "./DashPaintPage";
@@ -39,7 +39,7 @@ export function GameUi() {
 }
 
 export function NextLevelModal() {
-  const { nextLevel, progress } = useContext(MyContext);
+  const { nextLevel } = useContext(MyContext);
 
   return (
     <div
@@ -50,8 +50,6 @@ export function NextLevelModal() {
         position: "absolute",
         width: "10rem",
         height: "10rem",
-        // marginLeft: "42%",
-        // marginTop: "100%",
         color: "white",
         padding: "1rem",
         display: "flex",

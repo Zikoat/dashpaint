@@ -20,14 +20,11 @@ export class DashMap {
 
   getRectAsString(rect: Rect, spawnPoint?: Point): string {
     let asciiOutput = "";
-    let counter = 0;
 
     if (spawnPoint && this.getWallAt(spawnPoint))
       throw Error("spawnpoint is a wall");
 
     forEachTileInRect(rect, (point) => {
-      counter++;
-
       let character = "#";
       if (!this.getWallAt(point)) {
         character = ".";

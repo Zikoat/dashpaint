@@ -1,7 +1,7 @@
 node_modules
 /.next/
-/out/
+/dist/
 node_modules.bun
 package-lock.json
-
+tsconfig.tsbuildinfo
 bun.lockb

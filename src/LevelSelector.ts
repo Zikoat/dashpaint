@@ -27,6 +27,7 @@ const levels = [
 ..#.###.#.#.....#.`,
 ];
 
+// shit this isn't used yet
 export class LevelSelector {
   static getLevel(levelNumber: number): {
     dashMap: DashMap;

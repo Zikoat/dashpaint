@@ -1,9 +1,13 @@
 import math from "mathjs";
 import { test } from "vitest";
+// shit
+
 // import { adjacencyListToSteadyState } from "./DashPaintScene";
 
+// shit
+// @ts-ignore
 const nodes = ["1,0", "1,1", "0,1", "2,1", "1,2"];
-
+// @ts-ignore
 var adjacencyList = [
   [1, 4], // 0
   [0, 2, 3], // 1
@@ -13,11 +17,15 @@ var adjacencyList = [
 ];
 
 test("shit", () => {
+  //@ts-ignore
   const transitionMatrix = [
     [0.6, 0.4],
     [0.15, 0.85],
   ];
 
+  // shit
   // console.log("steady state", adjacencyListToSteadyState(transitionMatrix));
-  // const matrix = math.matrix();
+  // shit
+  //@ts-ignore
+  const matrix = math.matrix();
 });

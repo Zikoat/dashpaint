@@ -1,7 +1,10 @@
 import React, { useState } from "react";
 import { GameUi } from "../components/GameUi";
 import { LoadingPage } from "../components/LoadingPage";
-import { mutationsToPhaser, settersToReact } from "../components/PhaserReactBridge";
+import {
+  mutationsToPhaser,
+  settersToReact,
+} from "../components/PhaserReactBridge";
 
 export const reactInitialState = {
   progress: {
@@ -10,7 +13,8 @@ export const reactInitialState = {
   },
   isLoading: true,
   isEditing: false,
-  mutateEditing: (arg: boolean) => {},
+  // shit
+  mutateEditing: (_arg: boolean) => {},
   stuckable: false,
   resetLevel: () => {},
   nextLevel: () => {},

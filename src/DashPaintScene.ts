@@ -9,7 +9,6 @@ import {
   mutationsToPhaser,
   settersToReact,
 } from "./components/PhaserReactBridge";
-import { LevelSelector } from "./LevelSelector";
 import { assert } from "./assert";
 
 export type PanEvent = {
