@@ -105,7 +105,7 @@ export class DashPaintScene extends Phaser.Scene {
       this.resetGame();
     };
 
-    this.load.image("tiles", "../dashpaint/images/DashpaintTilesetV2.png");
+    this.load.image("tiles", "./assets/DashpaintTilesetV2.png");
   }
 
   create() {

@@ -1,5 +1,5 @@
 import React from "react";
-import loadingAnimation from "../../public/dashpaint/animations/loadingAnimation.gif";
+import loadingAnimation from "../assets/loadingAnimation.gif";
 
 export function LoadingPage() {
   return (
