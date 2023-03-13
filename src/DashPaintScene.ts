@@ -2,7 +2,6 @@ import * as Phaser from "phaser";
 import chroma from "chroma-js";
 import * as dat from "dat.gui";
 import { Pinch, Tap } from "phaser3-rex-plugins/plugins/gestures.js";
-import assert from "assert";
 import { DashEngine } from "./DashEngine";
 import { forEachTileInRect, Point } from "./GeometryHelpers";
 import { Controls } from "./Controls";
@@ -11,6 +10,7 @@ import {
   settersToReact,
 } from "./components/PhaserReactBridge";
 import { LevelSelector } from "./LevelSelector";
+import { assert } from "./assert";
 
 export type PanEvent = {
   dx: number;
@@ -576,7 +576,7 @@ export class DashPaintScene extends Phaser.Scene {
 
       if (analysedTile.componentId !== null) {
         const color = colors[analysedTile.componentId];
-        assert(color);
+        assert(!!color);
 
         ccTile.index = 2;
         ccTile.tint = Number(color.replace("#", "0x"));

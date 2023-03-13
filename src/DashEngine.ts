@@ -1,6 +1,5 @@
 import { Dir4, DIRECTIONS, mapRange } from "./Helpers";
 import createGraph, { Graph, Link, Node, NodeId } from "ngraph.graph";
-import assert from "assert";
 import { findScc } from "./GraphHelpers";
 import { MyPathFinder } from "./PathFinder";
 import { median } from "mathjs";
@@ -20,6 +19,7 @@ import {
 import { Dash } from "./DashHelpers";
 import { DashMap } from "./DashMap";
 import { LevelSelector } from "./LevelSelector";
+import { assert } from "./assert";
 
 export class DashEngine {
   spawnPoint: Point;
@@ -127,8 +127,8 @@ export class DashEngine {
       y: parseInt(splitString[1] as string),
     };
 
-    // assert(typeof parsedPoint.x === "number");
-    // assert(typeof parsedPoint.y === "number");
+    assert(typeof parsedPoint.x === "number");
+    assert(typeof parsedPoint.y === "number");
 
     return parsedPoint;
   }

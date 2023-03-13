@@ -1,12 +1,7 @@
 import React, { useState } from "react";
-import dynamic from "next/dynamic";
-import { mutationsToPhaser, settersToReact } from "./PhaserReactBridge";
-import { LoadingPage } from "./LoadingPage";
-import { GameUi } from "./GameUi";
-
-const LoadWithoutSSR = dynamic(() => import("../ReactGame"), {
-  ssr: false,
-});
+import { GameUi } from "../components/GameUi";
+import { LoadingPage } from "../components/LoadingPage";
+import { mutationsToPhaser, settersToReact } from "../components/PhaserReactBridge";
 
 export const reactInitialState = {
   progress: {
@@ -57,7 +52,6 @@ export default function DashPaintPage(): JSX.Element {
       </MyContext.Provider>
 
       <div id="phaser-container"></div>
-      <LoadWithoutSSR></LoadWithoutSSR>
     </>
   );
 }

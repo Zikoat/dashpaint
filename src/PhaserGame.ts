@@ -10,6 +10,14 @@ export const DashPaintConfig: Phaser.Types.Core.GameConfig = {
   pixelArt: true,
   backgroundColor: theme.colors[theme.index]?.[0],
   scene: [DashPaintScene],
+  input: {
+    // shit is this needed?
+    keyboard: true,
+  },
+  scale: {
+    mode: Phaser.Scale.RESIZE,
+    // `fullscreenTarget` must be defined for phones to not have a small margin during fullscreen.
+    fullscreenTarget: "app",
+  },
 };
 
-export const DashPaintGame = new Phaser.Game(DashPaintConfig);

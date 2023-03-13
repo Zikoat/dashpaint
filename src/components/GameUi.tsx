@@ -29,8 +29,11 @@ export function GameUi() {
         <EditButton></EditButton>
         <ProgressText></ProgressText>
         <StuckText></StuckText>
-      </div>
+        <button onClick={() => window.game.scale.toggleFullscreen()}>
+          fullscreen
+        </button>
       {showNextLevelModel ? <NextLevelModal></NextLevelModal> : <></>}
+      </div>
     </>
   );
 }
@@ -40,7 +43,6 @@ export function NextLevelModal() {
 
   return (
     <div
-      className="overlay"
       style={{
         borderColor: "#222",
         backgroundColor: "black",
@@ -48,8 +50,8 @@ export function NextLevelModal() {
         position: "absolute",
         width: "10rem",
         height: "10rem",
-        marginLeft: "42%",
-        marginTop: "100%",
+        // marginLeft: "42%",
+        // marginTop: "100%",
         color: "white",
         padding: "1rem",
         display: "flex",
