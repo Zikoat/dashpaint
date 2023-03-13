@@ -89,7 +89,9 @@ export class DashPaintScene extends Phaser.Scene {
       }
     };
 
-    mutationsToPhaser.resetLevel = () => {};
+    mutationsToPhaser.resetLevel = () => {
+      this.resetGame();
+    };
 
     mutationsToPhaser.nextLevel = () => {
       console.log("going to next level");
