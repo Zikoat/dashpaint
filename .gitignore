@@ -4,4 +4,3 @@ node_modules
 node_modules.bun
 package-lock.json
 tsconfig.tsbuildinfo
-bun.lockb
