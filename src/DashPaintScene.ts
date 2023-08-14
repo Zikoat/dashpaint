@@ -112,7 +112,7 @@ export class DashPaintScene extends Phaser.Scene {
       this.tileSize,
       this.tileSize,
       0,
-      0
+      0,
     );
 
     this.layer = this.map.createBlankLayer("ShitLayer1", this.tileset);
@@ -124,7 +124,7 @@ export class DashPaintScene extends Phaser.Scene {
       0,
       this.tileSize * 3,
       this.tileSize,
-      this.tileSize
+      this.tileSize,
     );
     playerSprite.add(
       "wall",
@@ -132,7 +132,7 @@ export class DashPaintScene extends Phaser.Scene {
       this.tileSize * 2,
       0,
       this.tileSize,
-      this.tileSize
+      this.tileSize,
     );
 
     this.player = this.add.image(0, 0, playerSprite);
@@ -141,18 +141,18 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.pathLengthColorLayer = this.map.createBlankLayer(
       "pathLengthColorLayer",
-      this.tileset
+      this.tileset,
     );
 
     this.fixSuggestionsLayer = this.map.createBlankLayer(
       "fixSuggestionsLayer",
-      this.tileset
+      this.tileset,
     );
     this.fixSuggestionsLayer.alpha = this.fixLayerDefaultAlpha;
 
     this.connectedComponentsLayer = this.map.createBlankLayer(
       "connectedComponents",
-      this.tileset
+      this.tileset,
     );
 
     this.connectedComponentsLayer.alpha = this.ccLayerDefaultAlpha;
@@ -199,7 +199,7 @@ export class DashPaintScene extends Phaser.Scene {
       if (this.isEditing) {
         this.cameras.main.setScroll(
           this.cameras.main.scrollX - pan.drag1Vector.x / this.zoom,
-          this.cameras.main.scrollY - pan.drag1Vector.y / this.zoom
+          this.cameras.main.scrollY - pan.drag1Vector.y / this.zoom,
         );
       } else {
         this.controls.pan(pan.drag1Vector);
@@ -213,7 +213,7 @@ export class DashPaintScene extends Phaser.Scene {
       if (this.isEditing) {
         this.cameras.main.setScroll(
           this.cameras.main.scrollX - pinch.movementCenterX / this.zoom,
-          this.cameras.main.scrollY - pinch.movementCenterY / this.zoom
+          this.cameras.main.scrollY - pinch.movementCenterY / this.zoom,
         );
       }
 
@@ -249,7 +249,7 @@ export class DashPaintScene extends Phaser.Scene {
       (tile) => {
         const isWall = this.dashEngine.getWallAt(tile);
         this.layer.putTileAt(isWall ? 2 : 0, tile.x, tile.y);
-      }
+      },
     );
 
     this.analyzeMap();
@@ -263,7 +263,7 @@ export class DashPaintScene extends Phaser.Scene {
   handleTap(
     tap: Tap & { scene: DashPaintScene; worldX: number; worldY: number },
     _gameObject: Phaser.GameObjects.GameObject,
-    _lastPointer: Phaser.Input.Pointer
+    _lastPointer: Phaser.Input.Pointer,
   ) {
     const scene = tap.scene as DashPaintScene;
     const tapPoint = scene.layer.worldToTileXY(tap.worldX, tap.worldY);
@@ -279,7 +279,7 @@ export class DashPaintScene extends Phaser.Scene {
       const tile: Phaser.Tilemaps.Tile | null = scene.layer.getTileAt(
         tapPoint.x,
         tapPoint.y,
-        true
+        true,
       );
 
       if (tile === null) {
@@ -334,7 +334,7 @@ export class DashPaintScene extends Phaser.Scene {
       } else {
         this.updateAngle();
         const nextPosition = this.getPlayerPosition().add(
-          this.movementDirection
+          this.movementDirection,
         );
         if (!this.dashEngine.getWallAt(nextPosition)) {
           this.setPlayerPosition(nextPosition);
@@ -350,7 +350,7 @@ export class DashPaintScene extends Phaser.Scene {
 
       const currentTile = this.layer.getTileAt(
         this.getPlayerPosition().x,
-        this.getPlayerPosition().y
+        this.getPlayerPosition().y,
       );
 
       if (currentTile.tint === 0) {
@@ -383,7 +383,7 @@ export class DashPaintScene extends Phaser.Scene {
       worldPosition.x + this.tileSize / 2,
       worldPosition.y + this.tileSize / 2,
       "tiles",
-      "wall"
+      "wall",
     );
     newSprite.tint = 0xffff88;
     const animationDuration = 300;
@@ -399,7 +399,7 @@ export class DashPaintScene extends Phaser.Scene {
     const worldPosition = this.layer.tileToWorldXY(point.x, point.y);
     this.player.setPosition(
       worldPosition.x + this.tileSize / 2,
-      worldPosition.y + this.tileSize / 2
+      worldPosition.y + this.tileSize / 2,
     );
   }
 
@@ -497,7 +497,7 @@ export class DashPaintScene extends Phaser.Scene {
       0,
       0,
       this.mapSize,
-      this.mapSize
+      this.mapSize,
     );
 
     this.layer.replaceByIndex(17, 0, 0, 0, this.mapSize, this.mapSize);
@@ -524,7 +524,7 @@ export class DashPaintScene extends Phaser.Scene {
       const tile = this.layer.getTileAt(
         analysedTile.x,
         analysedTile.y,
-        true
+        true,
       ) as Phaser.Tilemaps.Tile | null;
 
       assert(tile);
@@ -532,14 +532,14 @@ export class DashPaintScene extends Phaser.Scene {
       const ccTile = this.connectedComponentsLayer.getTileAt(
         analysedTile.x,
         analysedTile.y,
-        true
+        true,
       );
       assert(ccTile);
 
       const fixTile = this.fixSuggestionsLayer.getTileAt(
         analysedTile.x,
         analysedTile.y,
-        true
+        true,
       );
 
       assert(fixTile);

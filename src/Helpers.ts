@@ -30,7 +30,7 @@ export function mapRange(
   inMin: number,
   inMax: number,
   outMin: number,
-  outMax: number
+  outMax: number,
 ): number {
   if (inMax === inMin) return (outMax + outMin) / 2;
   const mapped: number =

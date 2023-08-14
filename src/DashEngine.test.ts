@@ -229,7 +229,7 @@ describe("DashEngine", () => {
       expect(stoppableTile.components).toHaveProperty("forEachNode");
 
       expect(
-        graphtoSimpleString(stoppableTile.components)
+        graphtoSimpleString(stoppableTile.components),
       ).toMatchInlineSnapshot('"1(0,1 0,0)->0(-1,1 1,1)"');
     });
 
@@ -309,7 +309,7 @@ describe("DashEngine", () => {
         numberOfDashesPassingOver: 0,
       });
       expect(
-        graphtoSimpleString(analysedTile.components)
+        graphtoSimpleString(analysedTile.components),
       ).toMatchInlineSnapshot('"0(0,0)"');
     });
 
@@ -340,7 +340,7 @@ describe("DashEngine", () => {
     dashEngine.fillRandom(
       { x: -1, y: -1, width: 3, height: 3 },
       undefined,
-      "1"
+      "1",
     );
 
     expect(dashEngine.getRectAsString({ x: -2, y: -2, width: 5, height: 5 }))
@@ -535,12 +535,12 @@ describe("DashEngine", () => {
       const mapScoreSingleComponent = dashEngine._mapScore();
 
       expect(
-        dashEngine.getRectAsString({ x: -2, y: -1, width: 5, height: 4 })
+        dashEngine.getRectAsString({ x: -2, y: -1, width: 5, height: 4 }),
       ).toBe(
         `#####
 ##..#
 #...#
-#####`
+#####`,
       );
 
       const shit = {
@@ -560,7 +560,7 @@ describe("DashEngine", () => {
     `);
     });
     it.todo(
-      "sigurd should move this to its own test file, and maybe make it into its own class"
+      "sigurd should move this to its own test file, and maybe make it into its own class",
     );
   });
 

@@ -71,7 +71,7 @@ export function pointInRectToIndex(point: Point, rect: Rect) {
 
 export function forEachTileInRect(
   rect: Rect,
-  callback: (point: Point) => void
+  callback: (point: Point) => void,
 ) {
   for (let i = 0; i < rect.height; i++) {
     for (let j = 0; j < rect.width; j++) {

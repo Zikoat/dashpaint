@@ -20,4 +20,3 @@ export const DashPaintConfig: Phaser.Types.Core.GameConfig = {
     fullscreenTarget: "app",
   },
 };
-

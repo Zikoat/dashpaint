@@ -127,7 +127,7 @@ describe("Graph", () => {
 
         expect(pathToSimpleString(foundPath)).toBe("");
       });
-    }
+    },
   );
 
   it("deletes the edges connected to a node if the node is deleted", () => {
@@ -153,7 +153,7 @@ describe("Connected components", () => {
     const connectedComponents = findScc(graph);
 
     expect(graphtoSimpleString(connectedComponents)).toMatchInlineSnapshot(
-      '"1(b a)->0(c)"'
+      '"1(b a)->0(c)"',
     );
   });
 
@@ -172,7 +172,7 @@ describe("Connected components", () => {
       `
       "2(e d)
       1(b a)->0(c)"
-    `
+    `,
     );
   });
 
@@ -184,7 +184,7 @@ describe("Connected components", () => {
     const connectedComponents = findScc(graph);
 
     expect(graphtoSimpleString(connectedComponents)).toMatchInlineSnapshot(
-      '"0(a)"'
+      '"0(a)"',
     );
   });
 

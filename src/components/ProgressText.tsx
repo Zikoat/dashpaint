@@ -6,7 +6,7 @@ export function ProgressText() {
 
   const percentage = Number(progress.painted / progress.total).toLocaleString(
     undefined,
-    { style: "percent", maximumFractionDigits: 1 }
+    { style: "percent", maximumFractionDigits: 1 },
   );
 
   const remaining = progress.total - progress.painted;

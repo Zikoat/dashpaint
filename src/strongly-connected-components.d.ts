@@ -1,1 +1,1 @@
-declare module 'strongly-connected-components';
+declare module "strongly-connected-components";

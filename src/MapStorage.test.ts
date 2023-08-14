@@ -23,5 +23,3 @@ describe("MapStorage", () => {
     expect(mapStorage.getAt({ x: 0, y: 0 })).toBe(null);
   });
 });
-
-

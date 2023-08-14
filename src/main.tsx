@@ -18,5 +18,5 @@ window.addEventListener("load", () => {
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <DashPaintPage />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

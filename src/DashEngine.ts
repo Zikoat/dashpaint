@@ -89,7 +89,7 @@ export class DashEngine {
 
   private forEachPointInDash(
     dash: Dash,
-    callback: (pointAlongDash: Point) => void
+    callback: (pointAlongDash: Point) => void,
   ) {
     const dashVector = subtractVectors(dash.to, dash.from);
 
@@ -154,7 +154,7 @@ export class DashEngine {
     };
 
     let positionIsWall = this.map.getWallAt(
-      addVectors(currentPosition, direction)
+      addVectors(currentPosition, direction),
     );
 
     let pathLength = 1;
@@ -165,13 +165,13 @@ export class DashEngine {
       const maxAllowedPathLength = 100;
       if (pathLength > maxAllowedPathLength)
         throw Error(
-          `there is a straight dash of over ${maxAllowedPathLength} tiles. Increase max to allow large dashes`
+          `there is a straight dash of over ${maxAllowedPathLength} tiles. Increase max to allow large dashes`,
         );
 
       currentPosition = addVectors(currentPosition, direction);
 
       positionIsWall = this.map.getWallAt(
-        addVectors(currentPosition, direction)
+        addVectors(currentPosition, direction),
       );
     }
 
@@ -180,7 +180,7 @@ export class DashEngine {
 
   private forEachNeighbor(
     point: Point,
-    callback: (neighbor: Point, direction: Point) => void
+    callback: (neighbor: Point, direction: Point) => void,
   ) {
     for (const direction of DIRECTIONS) {
       callback(addVectors(point, direction), direction);
@@ -199,7 +199,7 @@ export class DashEngine {
         height: mapSize - 2,
       },
       0.65,
-      seed?.toString()
+      seed?.toString(),
     );
     this.map.fillWallAt(
       {
@@ -208,7 +208,7 @@ export class DashEngine {
         width: 2,
         height: 1,
       },
-      false
+      false,
     );
 
     let i = 0;
@@ -233,7 +233,7 @@ export class DashEngine {
   private createDashGraph(start: Point) {
     if (this.map.getWallAt(start))
       throw Error(
-        `cannot create graph from point ${this.pointToString(start)}`
+        `cannot create graph from point ${this.pointToString(start)}`,
       );
 
     const graph = createGraph<string>();
@@ -276,7 +276,7 @@ export class DashEngine {
         point,
         dashGraph,
         componentGraph,
-        fixes
+        fixes,
       );
 
       analysedRect.push(analysedTile);
@@ -337,7 +337,7 @@ export class DashEngine {
     pointToAnalyse: Point,
     dashGraph = this.createDashGraph(this.spawnPoint),
     componentGraph = findScc(dashGraph),
-    fixes = this.suggestFixes(dashGraph)
+    fixes = this.suggestFixes(dashGraph),
   ): AnalysedTile {
     let isWall;
     let canCollide = false;
@@ -376,18 +376,18 @@ export class DashEngine {
             const dashDirection = normalizeVector(dashVector);
             const isDashInThisDirection = isEqual(
               dashDirection,
-              scaleVector(neighbor, -1)
+              scaleVector(neighbor, -1),
             );
 
             if (isDashInThisDirection) canCollide = true;
           },
-          false
+          false,
         );
         const canStopOnNeighbor = !!dashGraph.getNode(
-          this.pointToString(neighborPosition)
+          this.pointToString(neighborPosition),
         );
         const oppositeWallOfNeighborIsWall = this.map.getWallAt(
-          subtractVectors(neighborPosition, neighbor)
+          subtractVectors(neighborPosition, neighbor),
         );
         if (oppositeWallOfNeighborIsWall && canStopOnNeighbor) {
           canCollide = true;
@@ -405,7 +405,7 @@ export class DashEngine {
     });
 
     const fixIndex = fixes.findIndex((fix) =>
-      fix.tiles.some((tile) => isEqual(tile, pointToAnalyse))
+      fix.tiles.some((tile) => isEqual(tile, pointToAnalyse)),
     );
 
     const fixScore = fixes[fixIndex]?.score ?? null;
@@ -496,7 +496,7 @@ export class DashEngine {
 
       const componentDistanceToSpawn = componentPathFinder.find(
         spawnPointComponentId,
-        component.id
+        component.id,
       ).length;
 
       componentScores[component.id] = { tileCount, componentDistanceToSpawn };

@@ -120,7 +120,7 @@ describe("DashMap", () => {
   it("throws error if spawnpoint is on a wall", () => {
     const dashMap = new DashMap();
     expect(() => dashMap.to2dString(ORIGIN)).toThrowError(
-      "spawnpoint is a wall"
+      "spawnpoint is a wall",
     );
   });
 

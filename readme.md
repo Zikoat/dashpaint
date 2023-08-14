@@ -1,6 +1,7 @@
 ![Dashpaint Banner](/src/assets/banner.png)
 
 # Dashpaint
+
 An ice-sliding puzzle game inspired by the android games "House paint" and "Tomb of the mask". This game is still work-in-progress.
 
 Play the game at https://zikoat.github.io/dashpaint/.
@@ -25,7 +26,7 @@ Instructions for myself to remember how to get started developing this project:
 10. `gh auth login`
 11. `gh repo clone https://github.com/Zikoat/dashpaint.git`
 12. `cd dashpaint`
-13. `sudo apt install unzip`****
+13. `sudo apt install unzip`\*\*\*\*
 14. `curl [https://bun.sh/install](https://bun.sh/install) | bash` (install bun [https://bun.sh/](https://bun.sh/))
 15. `echo 'export BUN_INSTALL="$HOME/.bun"' >> ~/.bashrc` (from bun next steps)
 16. `echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> ~/.bashrc`(from bun next steps)

@@ -34,13 +34,13 @@ export function findScc(graph: Graph) {
         throw new Error(`couldnt find node index ${nodeIndex}`);
 
       return nodeId;
-    })
+    }),
   );
 
   const sccGraph = adjacencyListToGraph(
     sccOutput.adjacencyList,
     undefined,
-    components
+    components,
   );
 
   return sccGraph;
@@ -54,7 +54,7 @@ export interface SccOutput {
 export function adjacencyListToGraph<T>(
   adjacencyList: number[][],
   nodeIds?: NodeId[],
-  data?: T[]
+  data?: T[],
 ): Graph<T> {
   const g = createGraph<T>();
 
