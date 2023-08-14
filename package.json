@@ -4,14 +4,12 @@
   "module": "src/index.js",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
-    "serve": "vite preview",
     "test": "vitest -w --sequence.shuffle",
     "clean": "git clean -Xdf",
-    "ci": "bun install --production && bun run build && bun lintci",
-    "localci": "rm ./bun.lockb && bun i && bun lint && bun clean && bun ci && bun serve",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx ./src --fix && prettier --write .",
-    "lintci": "eslint --ext .js,.jsx,.ts,.tsx ./src && prettier --check ."
+    "ci": "bun install --production && eslint --ext .js,.jsx,.ts,.tsx ./src && prettier --check . && tsc && vite build",
+    "localci": "rm ./bun.lockb && bun i && bun lint && bun clean && bun ci && vite preview",
+    "todo": "// run test in ci"
   },
   "devDependencies": {
     "jest": "29.5.0",
