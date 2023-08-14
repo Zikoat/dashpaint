@@ -339,10 +339,9 @@ export class DashEngine {
     componentGraph = findScc(dashGraph),
     fixes = this.suggestFixes(dashGraph),
   ): AnalysedTile {
-    let isWall;
     let canCollide = false;
     let canStop;
-    let numberOfDashesPassingOver = 0;
+    const numberOfDashesPassingOver = 0;
     let componentId: number | null = null;
 
     const node = dashGraph.getNode(this.pointToString(pointToAnalyse));
@@ -352,7 +351,7 @@ export class DashEngine {
       canStop = true;
     }
 
-    isWall = this.map.getWallAt(pointToAnalyse);
+    const isWall = this.map.getWallAt(pointToAnalyse);
 
     if (dashGraph.getNodesCount() === 1) {
       this.forEachNeighbor(this.spawnPoint, (neighbor) => {

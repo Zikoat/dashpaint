@@ -596,8 +596,8 @@ export class DashPaintScene extends Phaser.Scene {
 
   getAngle(x: number, y: number): number {
     // stackoverflow.com/a/35271543
-    var angle = Math.atan2(y, x);
-    var degrees = (180 * angle) / Math.PI;
+    const angle = Math.atan2(y, x);
+    const degrees = (180 * angle) / Math.PI;
     return (360 + Math.round(degrees)) % 360;
   }
 

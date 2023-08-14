@@ -14,8 +14,8 @@ function toAdjacencyList(graph: Graph) {
   });
 
   graph.forEachLink((link) => {
-    let fromIndex = nodeIndexes[link.fromId]!;
-    let toIndex = nodeIndexes[link.toId]!;
+    const fromIndex = nodeIndexes[link.fromId]!;
+    const toIndex = nodeIndexes[link.toId]!;
 
     adjacencyList[fromIndex]!.push(toIndex);
   });

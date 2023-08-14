@@ -82,7 +82,7 @@ describe("Graph", () => {
 
         const pathfinder = new MyPathFinder(g, { oriented: true });
 
-        let foundPath = pathfinder.find(nodeName, nodeName);
+        const foundPath = pathfinder.find(nodeName, nodeName);
 
         const str = pathToSimpleString(foundPath);
 
@@ -99,7 +99,7 @@ describe("Graph", () => {
         const pathfinder = new MyPathFinder(g);
         const fromNodeId = 1;
         const toNodeId = 4;
-        let foundPath = pathfinder.find(fromNodeId, toNodeId);
+        const foundPath = pathfinder.find(fromNodeId, toNodeId);
 
         expect(pathToSimpleString(foundPath)).toBe("1->2->3->4");
       });
@@ -111,7 +111,7 @@ describe("Graph", () => {
 
         const pathfinder = new MyPathFinder(g);
 
-        let foundPath = pathfinder.find("a", "b");
+        const foundPath = pathfinder.find("a", "b");
 
         expect(pathToSimpleString(foundPath)).toBe("a->b");
       });
@@ -123,7 +123,7 @@ describe("Graph", () => {
 
         const pathfinder = new MyPathFinder(g);
 
-        let foundPath = pathfinder.find("b", "a");
+        const foundPath = pathfinder.find("b", "a");
 
         expect(pathToSimpleString(foundPath)).toBe("");
       });
