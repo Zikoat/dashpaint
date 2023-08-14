@@ -361,7 +361,7 @@ export class DashPaintScene extends Phaser.Scene {
           total: this.maxScore,
           painted: this.currentScore,
         });
-        
+
         if (this.currentScore === this.maxScore) {
           this.nextLevel();
         }
