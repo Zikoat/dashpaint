@@ -1,4 +1,4 @@
-![Dashpaint Banner](/src/assets/banner.png)
+![Dashpaint Banner](/assets/banner.png)
 
 # Dashpaint
 An ice-sliding puzzle game inspired by the android games "House paint" and "Tomb of the mask". This game is still work-in-progress.
