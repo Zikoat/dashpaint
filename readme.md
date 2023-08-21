@@ -1,4 +1,4 @@
-![Dashpaint Banner](/src/assets/banner.png)
+![Dashpaint Banner](/assets/banner.png)
 
 # Dashpaint
 
