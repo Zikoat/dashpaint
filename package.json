@@ -3,12 +3,12 @@
   "version": "0.0.4",
   "module": "src/index.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --open",
     "test": "vitest -w --sequence.shuffle",
     "clean": "git clean -Xdf",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx ./src --fix && prettier --write .",
     "ci": "bun install --production && eslint --ext .js,.jsx,.ts,.tsx ./src && prettier --check . && tsc && vite build",
-    "localci": "rm ./bun.lockb && bun i && bun lint && bun clean && bun ci && vite preview",
+    "localci": "rm ./bun.lockb && bun i && bun lint && bun clean && bun ci && vite preview --open",
     "todo": "// run test in ci"
   },
   "devDependencies": {
