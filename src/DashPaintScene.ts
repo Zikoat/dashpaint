@@ -63,7 +63,7 @@ export class DashPaintScene extends Phaser.Scene {
   currentScore = 0;
   zoom = 6;
   seed: number | undefined = 321;
-  paintColor = 0xff44ff;
+  paintColor = 0x20522e;
   ccLayerDefaultAlpha = 0;
   fixLayerDefaultAlpha = 0;
   isEditing = false;
@@ -137,7 +137,7 @@ export class DashPaintScene extends Phaser.Scene {
 
     this.player = this.add.image(0, 0, playerSprite);
     this.player.depth = 3;
-    this.player.tint = 0x00ffff;
+    this.player.tint = 0xffffff;
 
     this.pathLengthColorLayer = this.map.createBlankLayer(
       "pathLengthColorLayer",
