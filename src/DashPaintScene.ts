@@ -63,7 +63,7 @@ export class DashPaintScene extends Phaser.Scene {
   currentScore = 0;
   zoom = 6;
   seed: number | undefined = 321;
-  paintColor = 0x20522e;
+  paintColor = 0x499660;
   ccLayerDefaultAlpha = 0;
   fixLayerDefaultAlpha = 0;
   isEditing = false;
