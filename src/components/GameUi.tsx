@@ -4,6 +4,7 @@ import { FullscreenButton } from "./FullscreenButton";
 import { ProgressText } from "./ProgressText";
 import { ResetButton } from "./ResetButton";
 import { StuckText } from "./StuckText";
+import { ClearedLevelsText } from "./ClearedLevelsText";
 
 export function GameUi() {
   return (
@@ -22,6 +23,7 @@ export function GameUi() {
         <ResetButton></ResetButton>
         <EditButton></EditButton>
         <ProgressText></ProgressText>
+        <ClearedLevelsText></ClearedLevelsText>
         <StuckText></StuckText>
         <FullscreenButton></FullscreenButton>
       </div>

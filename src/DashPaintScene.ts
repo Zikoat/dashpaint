@@ -693,6 +693,13 @@ export class DashPaintScene extends Phaser.Scene {
     this.dashEngine.generateMap(this.mapSize, this.seed);
 
     this.resetGame();
+
+    window.localStorage.setItem(
+      "clearedLevels",
+      (
+        Number(window.localStorage.getItem("clearedLevels") ?? 0) + 1
+      ).toString(),
+    );
   }
 }
 
