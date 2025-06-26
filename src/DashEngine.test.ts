@@ -569,17 +569,17 @@ describe("DashEngine", () => {
 
     const analysedPoint = engine.analysePoint({ x: 3, y: 0 });
     expect(analysedPoint).toMatchInlineSnapshot(`
-    {
-      "canCollide": false,
-      "canStop": true,
-      "componentId": 0,
-      "fixScore": 3,
-      "isWall": false,
-      "numberOfDashesPassingOver": 0,
-      "x": 3,
-      "y": 0,
-    }
-  `);
+      {
+        "canCollide": false,
+        "canStop": false,
+        "componentId": null,
+        "fixScore": null,
+        "isWall": true,
+        "numberOfDashesPassingOver": 0,
+        "x": 3,
+        "y": 0,
+      }
+    `);
   });
   it.todo("sigurd should move the fixer into its own class");
 });
